@@ -13,6 +13,11 @@ env/
 .env.local
 .env.*.local
 
+# AI agent skills (ElevenLabs MCP skills; install locally — see README)
+.agents/
+.claude/
+skills-lock.json
+
 # General
 .DS_Store
 .vscode/

@@ -38,9 +38,9 @@ You are acting as an expert Full Stack Developer specializing in **Vue 3**, **Ty
 ## 4. External Integrations
 - **Supabase**: Used for authentication and database. Frontend uses Supabase JS client; Backend uses Python client. Ensure keys are managed via environment variables.
 - **AI Services**:
-    - **Eleven Labs**: For Text-to-Speech (TTS) voice synthesis.
+    - **Eleven Labs**: TTS for patient lines; **STT** for nurse speech input (same vendor or browser—see `docs/API.md`).
     - **Gemini (via Hugging Face or API)**: For LLM-based scenario generation and intelligent processing.
-    - **DigiRunner**: For API management, traffic protection, and security enhancement.
+    - **OpenTPI / digiRunner**: API gateway & governance (see `docs/API.md`); public traffic goes through digiRunner, not raw FastAPI in production.
 - **Handling AI APIs**: These are paid/limited APIs. Ensure robust error handling (e.g., graceful handling of rate limits or API failures).
 
 ## 5. Task Management

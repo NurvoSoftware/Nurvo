@@ -19,7 +19,7 @@
 - **Database & Authentication**: [Supabase](https://supabase.com/)
 - **Voice Synthesis (TTS)**: [Eleven Labs](https://elevenlabs.io/)
 - **LLM / AI Model**: Gemini (accessed via Hugging Face or direct API)
-- **Digirunner**: For API management, traffic regulation, and enhanced security.
+- **OpenTPI / [digiRunner](https://github.com/TPIsoftwareOSPO/digiRunner-Open-Source)**: Open-source API management (gateway, policies, OpenAPI 3.1+); see [OpenTPI](https://tpi.dev/). All public APIs are exposed through this layer.
 
 ## 3. Architecture
 
@@ -29,7 +29,7 @@
 
 ## 4. Key Features (Planned/Inferred)
 1.  **User Authentication**: Secure login and signup powered by Supabase.
-2.  **Voice Interaction**: Realistic voice synthesis using Eleven Labs to convert text to speech for patient dialogue.
+2.  **Voice Interaction**: Eleven Labs TTS for patient dialogue; **nurse replies via speech-to-text (STT)** → text sent to backend (implementation: browser API, uploaded audio + Scribe, etc.).
 3.  **Intelligent Processing**: Using Gemini models to process user inputs and generate dynamic scenarios.
 4.  **Responsive UI**: A modern, responsive interface built with Vue 3 and CSS.
 

@@ -1,8 +1,20 @@
-# Add your Python project dependencies here.
-# To install dependencies: pip install -r requirements.txt
-# To save current dependencies: pip freeze > requirements.txt
+# Nurvo backend — install: pip install -r requirements.txt
 
-# Example:
-# flask
-# python-dotenv
-# requests
+# Web API
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+
+# Config
+python-dotenv>=1.0.0
+
+# ElevenLabs (TTS / Agents / STT / Music / SFX as needed)
+elevenlabs>=1.50.0
+
+# Supabase (auth + DB)
+supabase>=2.0.0
+
+# HTTP client (async; Supabase / generic API calls)
+httpx>=0.27.0
+
+# Gemini (direct API — optional if you only use Hugging Face)
+google-generativeai>=0.8.0
