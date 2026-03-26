@@ -1,0 +1,418 @@
+<script setup lang="ts">
+import { ref, watch, nextTick, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useChatStore } from '@/stores/chatStore'
+import { useGameStore } from '@/stores/gameStore'
+import { sendMessage } from '@/services/wsService'
+import { decodeAndPlay } from '@/services/audioService'
+import * as speechService from '@/services/speechService'
+import ChatBubble from './ChatBubble.vue'
+
+const router = useRouter()
+const chatStore = useChatStore()
+const gameStore = useGameStore()
+
+const inputText = ref<string>('')
+const messagesContainer = ref<HTMLElement | null>(null)
+const isRecording = ref<boolean>(false)
+const speechSupported: boolean = speechService.isSupported()
+
+const filteredMessages = computed(() => {
+  return chatStore.messages
+})
+
+const typingLabel = computed<string>(() => {
+  if (!chatStore.typingIndicator) return ''
+  return chatStore.typingIndicator === 'patient' ? '病患正在輸入...' : '家屬正在輸入...'
+})
+
+const placeholder = computed<string>(() => {
+  return '輸入訊息給' + (chatStore.currentTarget === 'patient' ? '病患' : '家屬') + '...'
+})
+
+const disabled = computed<boolean>(() => {
+  return !chatStore.isConnected
+})
+
+const canSend = computed<boolean>(() => {
+  return !!inputText.value.trim() && chatStore.isConnected
+})
+
+function handleSend(): void {
+  const content = inputText.value.trim()
+  if (!content) return
+
+  sendMessage(chatStore.currentTarget, content)
+
+  chatStore.addMessage({
+    id: `nurse-${Date.now()}`,
+    sender: 'nurse',
+    content,
+    timestamp: new Date().toISOString(),
+    elapsed_seconds: 0,
+    is_interjection: false,
+  })
+
+  inputText.value = ''
+}
+
+function switchTarget(target: 'patient' | 'family'): void {
+  chatStore.setTarget(target)
+}
+
+function goToRecord(): void {
+  gameStore.setStatus('recording')
+  router.push('/record')
+}
+
+function scrollToBottom(): void {
+  if (messagesContainer.value) {
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  }
+}
+
+function toggleRecording(): void {
+  if (isRecording.value) {
+    speechService.stop()
+    isRecording.value = false
+  } else {
+    speechService.start((text: string) => {
+      inputText.value += text
+      isRecording.value = false
+    })
+    isRecording.value = true
+  }
+}
+
+// Auto-play audio when new NPC message arrives with audio
+watch(
+  () => chatStore.messages.length,
+  (_newLen: number, oldLen: number | undefined) => {
+    nextTick(() => {
+      scrollToBottom()
+      const latest = chatStore.messages[chatStore.messages.length - 1]
+      if (latest && latest.sender !== 'nurse' && latest.audio_base64) {
+        decodeAndPlay(latest.audio_base64)
+      }
+    })
+  },
+)
+</script>
+
+<template>
+  <div class="chat-panel">
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button
+        class="tab-btn"
+        :class="{ 'tab-btn--active': chatStore.currentTarget === 'patient' }"
+        @click="switchTarget('patient')"
+      >
+        &#x1F9D3; 病患
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ 'tab-btn--active': chatStore.currentTarget === 'family' }"
+        @click="switchTarget('family')"
+      >
+        &#x1F469; 家屬
+      </button>
+    </div>
+
+    <!-- Messages area -->
+    <div ref="messagesContainer" class="messages-area">
+      <div v-if="filteredMessages.length === 0" class="empty-state">
+        <p>開始與{{ chatStore.currentTarget === 'patient' ? '病患' : '家屬' }}對話</p>
+        <p class="empty-hint">輸入訊息開始溝通評估</p>
+      </div>
+
+      <ChatBubble v-for="msg in filteredMessages" :key="msg.id" :message="msg" />
+
+      <!-- Typing indicator -->
+      <div v-if="chatStore.typingIndicator" class="typing-row">
+        <div
+          class="bubble-avatar"
+          :class="chatStore.typingIndicator === 'patient' ? 'bubble-avatar--patient' : 'bubble-avatar--family'"
+        >
+          {{ chatStore.typingIndicator === 'patient' ? '&#x1F9D3;' : '&#x1F469;' }}
+        </div>
+        <div class="typing-bubble">
+          <span class="typing-dots">
+            <span></span><span></span><span></span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input area -->
+    <div class="input-area">
+      <div class="input-row">
+        <textarea
+          v-model="inputText"
+          :placeholder="placeholder"
+          :disabled="disabled"
+          rows="1"
+          class="input-textarea"
+          @keydown.enter.exact.prevent="handleSend"
+        ></textarea>
+        <button
+          v-if="speechSupported"
+          class="input-btn input-btn--mic"
+          :class="{ 'input-btn--recording': isRecording }"
+          :disabled="disabled"
+          :title="isRecording ? '停止錄音' : '語音輸入'"
+          @click="toggleRecording"
+        >
+          &#x1F3A4;
+        </button>
+        <button
+          class="input-btn input-btn--send"
+          :disabled="!canSend"
+          @click="handleSend"
+        >
+          &#x27A4;
+        </button>
+      </div>
+      <button class="record-link" @click="goToRecord">
+        &#x1F4DD; 完成並記錄
+      </button>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--nurvo-white);
+}
+
+/* Tab bar */
+.tab-bar {
+  display: flex;
+  padding: 8px 12px;
+  gap: 6px;
+  border-bottom: 1px solid var(--nurvo-border-light);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: var(--nurvo-radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--nurvo-border);
+  background: var(--nurvo-surface);
+  color: var(--nurvo-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--nurvo-font-family);
+  text-align: center;
+}
+
+.tab-btn--active {
+  background: var(--nurvo-primary);
+  color: white;
+  border-color: var(--nurvo-primary);
+}
+
+/* Messages area */
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.messages-area::-webkit-scrollbar {
+  width: 4px;
+}
+
+.messages-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-area::-webkit-scrollbar-thumb {
+  background: var(--nurvo-border);
+  border-radius: 2px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--nurvo-text-muted);
+  text-align: center;
+  gap: 4px;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.empty-hint {
+  font-size: 11px !important;
+  opacity: 0.7;
+}
+
+/* Typing indicator */
+.typing-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.bubble-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.bubble-avatar--patient {
+  background: linear-gradient(135deg, var(--nurvo-patient-light), var(--nurvo-patient));
+}
+
+.bubble-avatar--family {
+  background: linear-gradient(135deg, var(--nurvo-family), var(--nurvo-family-dark));
+}
+
+.typing-bubble {
+  background: var(--nurvo-patient-bubble);
+  padding: 10px 16px;
+  border-radius: 2px 14px 14px 14px;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--nurvo-text-muted);
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+/* Input area */
+.input-area {
+  border-top: 1px solid var(--nurvo-border-light);
+  padding: 10px 12px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.input-textarea {
+  flex: 1;
+  background: var(--nurvo-surface);
+  border: 1px solid var(--nurvo-border);
+  border-radius: var(--nurvo-radius-md);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--nurvo-text-primary);
+  font-family: var(--nurvo-font-family);
+  resize: none;
+  outline: none;
+  line-height: 1.4;
+  min-height: 20px;
+  transition: border-color 0.2s;
+}
+
+.input-textarea::placeholder {
+  color: var(--nurvo-text-muted);
+}
+
+.input-textarea:focus {
+  border-color: var(--nurvo-primary-border);
+}
+
+.input-textarea:disabled {
+  opacity: 0.5;
+}
+
+.input-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  border: none;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+
+.input-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.input-btn--mic {
+  background: var(--nurvo-surface);
+  border: 1px solid var(--nurvo-border);
+}
+
+.input-btn--recording {
+  background: var(--nurvo-danger-light);
+  border-color: var(--nurvo-danger-border);
+}
+
+.input-btn--send {
+  background: var(--nurvo-gradient-primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.record-link {
+  background: none;
+  border: none;
+  font-size: 10px;
+  color: var(--nurvo-text-muted);
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: var(--nurvo-surface);
+  transition: color 0.2s;
+  font-family: var(--nurvo-font-family);
+}
+
+.record-link:hover {
+  color: var(--nurvo-text-secondary);
+}
+</style>

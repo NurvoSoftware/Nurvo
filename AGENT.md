@@ -39,7 +39,7 @@ You are acting as an expert Full Stack Developer specializing in **Vue 3**, **Ty
 - **Supabase**: Used for authentication and database. Frontend uses Supabase JS client; Backend uses Python client. Ensure keys are managed via environment variables.
 - **AI Services**:
     - **Eleven Labs**: For Text-to-Speech (TTS) voice synthesis.
-    - **Gemini (via Hugging Face or API)**: For LLM-based scenario generation and intelligent processing.
+    - **OpenAI GPT-4o (via OpenAI API)**: For LLM-based scenario generation, NPC conversation, and scoring analysis.
     - **DigiRunner**: For API management, traffic protection, and security enhancement.
 - **Handling AI APIs**: These are paid/limited APIs. Ensure robust error handling (e.g., graceful handling of rate limits or API failures).
 

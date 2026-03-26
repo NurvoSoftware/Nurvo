@@ -1,35 +1,223 @@
 @import './base.css';
 
 #app {
-  max-width: 1280px;
+  min-height: 100vh;
+}
+
+/* Shared Navigation Bar */
+.nurvo-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--nurvo-white);
+  border-bottom: 1px solid var(--nurvo-border-light);
+}
+
+.nurvo-nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nurvo-nav-logo-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--nurvo-radius-sm);
+  background: var(--nurvo-gradient-logo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.nurvo-nav-logo-text {
+  font-size: var(--nurvo-font-size-lg);
+  font-weight: 700;
+  color: var(--nurvo-text-primary);
+  letter-spacing: -0.5px;
+}
+
+.nurvo-nav-step {
+  font-size: 11px;
+  color: var(--nurvo-text-secondary);
+}
+
+/* Centered Page Container */
+.nurvo-page-container {
+  padding: 24px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+.nurvo-page-container--narrow {
+  max-width: 640px;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+.nurvo-page-container--wide {
+  max-width: 800px;
+}
+
+/* Page Headers */
+.nurvo-page-title {
+  font-size: var(--nurvo-font-size-2xl);
+  font-weight: 700;
+  color: var(--nurvo-text-primary);
+  margin-bottom: 4px;
+}
+
+.nurvo-page-subtitle {
+  font-size: var(--nurvo-font-size-base);
+  color: var(--nurvo-text-secondary);
+}
+
+/* Primary CTA Button */
+.nurvo-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--nurvo-gradient-primary);
+  color: white;
+  padding: 12px 28px;
+  border-radius: var(--nurvo-radius-md);
+  font-size: var(--nurvo-font-size-lg);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--nurvo-shadow-button);
+  transition: opacity 0.2s, transform 0.1s;
+  font-family: var(--nurvo-font-family);
+  line-height: 1;
+}
+
+.nurvo-btn-primary:hover {
+  opacity: 0.92;
+}
+
+.nurvo-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.nurvo-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Secondary Button */
+.nurvo-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--nurvo-white);
+  color: var(--nurvo-text-secondary);
+  padding: 10px 24px;
+  border-radius: var(--nurvo-radius-md);
+  font-size: var(--nurvo-font-size-md);
+  font-weight: 500;
+  border: 1px solid var(--nurvo-border);
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: var(--nurvo-font-family);
+  line-height: 1;
+}
+
+.nurvo-btn-secondary:hover {
+  background: var(--nurvo-surface);
+}
+
+/* Card */
+.nurvo-card {
+  background: var(--nurvo-white);
+  border-radius: var(--nurvo-radius-lg);
+  padding: 20px;
+  border: 1px solid var(--nurvo-border);
+}
+
+.nurvo-card--sm {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+/* Label */
+.nurvo-label {
+  font-size: var(--nurvo-font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--nurvo-text-muted);
+  font-weight: 600;
+}
+
+/* Tag / Pill */
+.nurvo-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--nurvo-radius-sm);
+  font-size: var(--nurvo-font-size-sm);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.nurvo-tag--blue {
+  background: var(--nurvo-primary-light);
+  color: var(--nurvo-primary);
+  border: 1px solid var(--nurvo-primary-border);
+}
+
+.nurvo-tag--red {
+  background: var(--nurvo-danger-light);
+  color: var(--nurvo-danger-dark);
+  border: 1px solid var(--nurvo-danger-border);
+}
+
+.nurvo-tag--green {
+  background: var(--nurvo-success-light);
+  color: var(--nurvo-success-dark);
+  border: 1px solid var(--nurvo-success-border);
+}
+
+.nurvo-tag--yellow {
+  background: var(--nurvo-warning-light);
+  color: var(--nurvo-warning-darker);
+  border: 1px solid var(--nurvo-warning-border);
+}
+
+/* Spinner */
+@keyframes nurvo-spin {
+  to { transform: rotate(360deg); }
+}
+
+.nurvo-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: nurvo-spin 0.6s linear infinite;
+}
+
+/* Pulse animation for timer */
+@keyframes nurvo-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.nurvo-pulse {
+  animation: nurvo-pulse 1s ease-in-out infinite;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .nurvo-page-container {
+    padding: 16px;
   }
-}
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+  .nurvo-nav {
+    padding: 12px 16px;
   }
 }

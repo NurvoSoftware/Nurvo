@@ -18,19 +18,19 @@
 ### Infrastructure & Services
 - **Database & Authentication**: [Supabase](https://supabase.com/)
 - **Voice Synthesis (TTS)**: [Eleven Labs](https://elevenlabs.io/)
-- **LLM / AI Model**: Gemini (accessed via Hugging Face or direct API)
+- **LLM / AI Model**: [OpenAI GPT-4o](https://platform.openai.com/) (accessed via OpenAI API)
 - **Digirunner**: For API management, traffic regulation, and enhanced security.
 
 ## 3. Architecture
 
 ### Client-Server Model
 - **Frontend (`nurvofronted/`)**: Handles user interactions, visualizes simulation scenarios, and manages application state. Communicates with the backend via RESTful APIs.
-- **Backend (`backend/` or `nurvobackend/`)**: Serves as the orchestration layer for AI services. It processes requests, interacts with Supabase for data persistence, generates scenarios via LLM, and manages voice synthesis.
+- **Backend (`nurvobackend/`)**: Serves as the orchestration layer for AI services. It processes requests, interacts with Supabase for data persistence, generates scenarios via OpenAI GPT-4o, and manages voice synthesis.
 
 ## 4. Key Features (Planned/Inferred)
 1.  **User Authentication**: Secure login and signup powered by Supabase.
 2.  **Voice Interaction**: Realistic voice synthesis using Eleven Labs to convert text to speech for patient dialogue.
-3.  **Intelligent Processing**: Using Gemini models to process user inputs and generate dynamic scenarios.
+3.  **Intelligent Processing**: Using OpenAI GPT-4o to process user inputs and generate dynamic scenarios.
 4.  **Responsive UI**: A modern, responsive interface built with Vue 3 and CSS.
 
 
