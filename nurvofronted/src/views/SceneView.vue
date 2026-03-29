@@ -43,6 +43,17 @@ function handleTimerExpired(): void {
   router.push({ path: '/record', query: { expired: '1' } })
 }
 
+function interruptGame(): void {
+  const confirmed = window.confirm('確定要中斷本次遊戲嗎？目前進度將不會保留。')
+  if (!confirmed) return
+
+  stopAudio()
+  chatStore.reset()
+  scenarioStore.reset()
+  gameStore.reset()
+  router.push('/')
+}
+
 onMounted(() => {
   if (!scenarioStore.scenario || !gameStore.sessionId) {
     router.replace('/')
@@ -103,6 +114,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <div class="toolbar-right">
+        <button class="interrupt-btn" @click="interruptGame">中斷遊戲</button>
         <button class="patient-info-btn" @click="showPatientInfo = true">
           &#x1F4CB; 病患資訊
         </button>
@@ -289,6 +301,25 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.interrupt-btn {
+  background: rgba(254, 242, 242, 0.95);
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #b91c1c;
+  border: 1px solid rgba(252, 165, 165, 0.85);
+  cursor: pointer;
+  font-family: var(--nurvo-font-family);
+  font-weight: 700;
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.interrupt-btn:hover {
+  background: #ffffff;
+  border-color: #f87171;
+  transform: translateY(-1px);
 }
 
 .patient-info-btn {
