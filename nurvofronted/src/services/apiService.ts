@@ -1,8 +1,108 @@
-import type { ScenarioGenerateResponse, ScoreResult } from '@/types/game'
+import type { ScenarioDifficulty, ScenarioGenerateResponse, ScoreResult } from '@/types/game'
 
 const API_BASE = '/api'
 const MAX_RETRIES = 2
 const RETRY_DELAY_MS = 2000
+const USE_MOCK_API = import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_API === 'true'
+
+function randomId(prefix: string): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return `${prefix}-${crypto.randomUUID()}`
+  }
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`
+}
+
+function createMockScenarioResponse(difficulty: ScenarioDifficulty = 'medium'): ScenarioGenerateResponse {
+  const now = new Date().toISOString()
+  const severityMap: Record<ScenarioDifficulty, number> = {
+    easy: 4,
+    medium: 7,
+    hard: 9,
+  }
+  const timeLimitMap: Record<ScenarioDifficulty, number> = {
+    easy: 600,
+    medium: 480,
+    hard: 360,
+  }
+  const challengeMap: Record<ScenarioDifficulty, string[]> = {
+    easy: ['病患疼痛敘述不完整', '需以同理開場並逐步提問'],
+    medium: ['病患疼痛敘述不完整', '家屬容易打斷', '需同理並引導重點'],
+    hard: ['病患情緒波動明顯', '家屬高焦慮且頻繁打斷', '需同時完成安撫、評估與衛教'],
+  }
+
+  return {
+    session_id: randomId('mock-session'),
+    scenario: {
+      id: randomId('mock-scenario'),
+      patient_profile: {
+        name: '王阿明',
+        age: 67,
+        gender: '男',
+        diagnosis: '術後傷口疼痛',
+        medications: ['止痛藥 PRN', '抗生素'],
+        medical_history: ['高血壓', '第二型糖尿病'],
+        allergies: ['無已知藥物過敏'],
+      },
+      pain_details: {
+        location: '右下腹手術傷口',
+        severity: severityMap[difficulty],
+        type: '刺痛',
+        duration: '約 2 小時',
+        onset: '翻身後加劇',
+        aggravating_factors: ['翻身', '咳嗽'],
+        relieving_factors: ['平躺休息'],
+        associated_symptoms: ['焦慮', '冒冷汗'],
+      },
+      family_member: {
+        name: '王太太',
+        relationship: '配偶',
+        personality: '焦慮、保護性高',
+        emotional_state: '擔心手術後恢復狀況',
+        interjection_triggers: ['疼痛惡化', '等待過久', '資訊不清楚'],
+      },
+      communication_challenges: challengeMap[difficulty],
+      correct_answers: {
+        expected_info_gathered: ['疼痛位置', '疼痛程度', '疼痛誘發因子', '緩解方式'],
+        ideal_empathy_phrases: ['我理解您現在很不舒服', '謝謝您願意告訴我感受'],
+        ideal_questioning_sequence: ['先同理', '再問疼痛細節', '確認變化與影響'],
+        family_calming_strategies: ['先回應家屬擔憂', '提供清楚下一步處置'],
+      },
+      time_limit_seconds: timeLimitMap[difficulty],
+      created_at: now,
+    },
+  }
+}
+
+function createMockScoreResult(sessionId: string): ScoreResult {
+  return {
+    session_id: sessionId,
+    overall_score: 82,
+    level_label: '良好',
+    dimension_scores: {
+      empathy: 84,
+      guided_questioning: 80,
+      family_calming: 78,
+      info_gathering: 85,
+      response_fluency: 81,
+    },
+    strengths: ['能先同理病患不適', '有主動釐清疼痛位置與程度', '語句清楚、節奏穩定'],
+    improvements: ['可更早安撫家屬情緒', '可補問疼痛持續時間與緩解因子'],
+    key_moments: [
+      {
+        elapsed_seconds: 34,
+        message_id: 'mock-msg-1',
+        quality: 'good',
+        description: '第一時間先同理病患情緒，建立信任。',
+      },
+      {
+        elapsed_seconds: 96,
+        message_id: 'mock-msg-2',
+        quality: 'needs_improvement',
+        description: '家屬焦慮升高時，可先短句安撫再繼續提問。',
+      },
+    ],
+  }
+}
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -94,14 +194,25 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   throw lastError || new Error('請求失敗，請稍後再試')
 }
 
-export async function generateScenario(): Promise<ScenarioGenerateResponse> {
-  return request<ScenarioGenerateResponse>('/scenario/generate', { method: 'POST' })
+export async function generateScenario(
+  difficulty: ScenarioDifficulty = 'medium',
+): Promise<ScenarioGenerateResponse> {
+  if (USE_MOCK_API) {
+    return createMockScenarioResponse(difficulty)
+  }
+  return request<ScenarioGenerateResponse>('/scenario/generate', {
+    method: 'POST',
+    body: JSON.stringify({ difficulty }),
+  })
 }
 
 export async function submitRecord(
   sessionId: string,
   content: string,
 ): Promise<{ status: string; session_id: string }> {
+  if (USE_MOCK_API) {
+    return { status: 'ok', session_id: sessionId }
+  }
   return request('/record/submit', {
     method: 'POST',
     body: JSON.stringify({ session_id: sessionId, content }),
@@ -109,6 +220,9 @@ export async function submitRecord(
 }
 
 export async function evaluateScore(sessionId: string): Promise<ScoreResult> {
+  if (USE_MOCK_API) {
+    return createMockScoreResult(sessionId)
+  }
   return request<ScoreResult>('/score/evaluate', {
     method: 'POST',
     body: JSON.stringify({ session_id: sessionId }),

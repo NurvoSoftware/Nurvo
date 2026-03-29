@@ -97,6 +97,8 @@ export interface GameSession {
   status: 'briefing' | 'playing' | 'recording' | 'scoring' | 'completed'
 }
 
+export type ScenarioDifficulty = 'easy' | 'medium' | 'hard'
+
 export type GameStatus =
   | 'idle'
   | 'generating'

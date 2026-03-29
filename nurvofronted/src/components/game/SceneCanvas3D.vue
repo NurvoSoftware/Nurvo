@@ -33,34 +33,34 @@ const familyAnimState = computed(() =>
 
 <template>
   <div class="scene-3d-container">
-    <TresCanvas shadows :style="{ background: 'linear-gradient(180deg, #e8f4fd 0%, #f0f9ff 60%, #e2e8f0 100%)' }">
+    <TresCanvas shadows :style="{ background: 'linear-gradient(180deg, #e6f0fa 0%, #edf6ff 42%, #d8e2ee 100%)' }">
       <!-- Camera -->
       <TresPerspectiveCamera :position="[0, 3, 6]" :look-at="[0, 1, 0]" />
 
       <!-- Lighting -->
-      <TresAmbientLight :intensity="0.65" />
-      <TresDirectionalLight :position="[3, 5, 4]" :intensity="0.8" cast-shadow />
+      <TresAmbientLight :intensity="0.68" />
+      <TresDirectionalLight :position="[3, 5, 4]" :intensity="0.76" cast-shadow />
 
       <!-- Floor -->
       <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]" receive-shadow>
         <TresPlaneGeometry :args="[10, 8]" />
-        <TresMeshStandardMaterial color="#dde4ed" />
+        <TresMeshStandardMaterial color="#d6dde7" />
       </TresMesh>
 
       <!-- Back Wall -->
       <TresMesh :position="[0, 2, -4]">
         <TresPlaneGeometry :args="[10, 4]" />
-        <TresMeshStandardMaterial color="#e8f4fd" />
+        <TresMeshStandardMaterial color="#e5eff9" />
       </TresMesh>
 
       <!-- Window on back wall -->
       <TresMesh :position="[3, 2.5, -3.98]">
         <TresPlaneGeometry :args="[1.5, 1.2]" />
-        <TresMeshStandardMaterial color="#bae6fd" />
+        <TresMeshStandardMaterial color="#c7e7ff" />
       </TresMesh>
       <TresMesh :position="[3, 2.5, -3.97]">
         <TresPlaneGeometry :args="[1.6, 1.3]" />
-        <TresMeshStandardMaterial color="#94a3b8" />
+        <TresMeshStandardMaterial color="#8da0b6" />
       </TresMesh>
 
       <!-- Hospital Bed -->

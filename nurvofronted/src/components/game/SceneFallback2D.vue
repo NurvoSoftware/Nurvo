@@ -23,8 +23,6 @@ const truncatedContent = computed<string>(() => {
 
 <template>
   <div class="scene-fallback-2d">
-    <div class="fallback-banner">2D 簡化版場景</div>
-
     <div class="room">
       <!-- Wall -->
       <div class="wall">
@@ -93,29 +91,30 @@ const truncatedContent = computed<string>(() => {
   width: 100%;
   height: 100%;
   min-height: 500px;
-  background: var(--nurvo-patient-bg);
+  background-image:
+    linear-gradient(180deg, rgba(8, 47, 73, 0.08) 0%, rgba(2, 6, 23, 0.18) 100%),
+    url('/hospital_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   overflow: hidden;
   position: relative;
-}
-
-.fallback-banner {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 11px;
-  color: var(--nurvo-text-muted);
-  background: rgba(255, 255, 255, 0.85);
-  padding: 2px 12px;
-  border-radius: var(--nurvo-radius-sm);
-  z-index: 10;
-  user-select: none;
 }
 
 .room {
   width: 100%;
   height: 100%;
   position: relative;
+}
+
+.wall,
+.floor,
+.bed,
+.person-head,
+.person-body,
+.person-legs,
+.character.nurse {
+  display: none;
 }
 
 /* Wall */
@@ -211,6 +210,9 @@ const truncatedContent = computed<string>(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
+  width: 110px;
+  height: 130px;
   transition: transform 0.2s ease;
 }
 
@@ -224,88 +226,20 @@ const truncatedContent = computed<string>(() => {
   transform: scale(1.05);
 }
 
-.character.patient { top: 34%; left: 32%; }
-.character.family { top: 32%; right: 15%; }
-.character.nurse { bottom: 8%; left: 50%; transform: translateX(-50%); cursor: default; }
-
-/* Heads */
-.person-head {
-  border-radius: 50%;
-  border: 2px solid;
-}
-
-.person-head--patient {
-  width: 30px;
-  height: 30px;
-  background: var(--nurvo-patient);
-  border-color: var(--nurvo-patient-dark);
-}
-
-.person-head--family {
-  width: 28px;
-  height: 28px;
-  background: var(--nurvo-family);
-  border-color: var(--nurvo-family-dark);
-}
-
-.person-head--nurse {
-  width: 32px;
-  height: 32px;
-  background: var(--nurvo-nurse-light);
-  border-color: var(--nurvo-primary);
-}
-
-/* Bodies */
-.person-body--patient {
-  width: 60px;
-  height: 20px;
-  background: var(--nurvo-patient-light);
-  border-radius: 4px;
-  margin-top: -2px;
-  border: 1px solid var(--nurvo-patient);
-}
-
-.person-body--family {
-  width: 36px;
-  height: 40px;
-  background: var(--nurvo-family);
-  border-radius: 8px 8px 4px 4px;
-  margin-top: 2px;
-  border: 1px solid var(--nurvo-family-dark);
-}
-
-.person-body--nurse {
-  width: 38px;
-  height: 42px;
-  background: var(--nurvo-white);
-  border-radius: 8px 8px 4px 4px;
-  margin-top: 2px;
-  border: 1px solid var(--nurvo-border);
-}
-
-.person-legs {
-  display: flex;
-  gap: 6px;
-  margin-top: 2px;
-}
-
-.person-legs::before,
-.person-legs::after {
-  content: '';
-  width: 10px;
-  height: 24px;
-  background: var(--nurvo-text-muted);
-  border-radius: 0 0 4px 4px;
-}
+.character.patient { top: 36%; left: 28%; }
+.character.family { top: 34%; left: 44%; }
 
 .character-label {
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--nurvo-text-secondary);
+  margin-top: 0;
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 700;
   white-space: nowrap;
-  background: rgba(255, 255, 255, 0.85);
-  padding: 2px 8px;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(186, 230, 253, 0.95);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
 }
 
 .character.patient:hover .character-label,
@@ -322,7 +256,7 @@ const truncatedContent = computed<string>(() => {
   transform: translateX(-50%);
   padding: 8px 12px;
   border-radius: var(--nurvo-radius-sm);
-  font-size: 11px;
+  font-size: 13px;
   max-width: 200px;
   min-width: 100px;
   text-align: center;

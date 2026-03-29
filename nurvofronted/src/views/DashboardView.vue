@@ -107,9 +107,13 @@ onMounted(async () => {
 
 <template>
   <div class="dashboard-page">
-    <NavBar :step="3" stepLabel="Results" />
+    <div class="bg-glow bg-glow--left"></div>
+    <div class="bg-glow bg-glow--right"></div>
 
-    <div class="dashboard-container">
+    <NavBar />
+
+    <main class="dashboard-shell">
+      <div class="dashboard-container">
       <!-- Loading State -->
       <div v-if="scoreStore.loading" class="loading-container">
         <div class="spinner" />
@@ -124,6 +128,11 @@ onMounted(async () => {
 
       <!-- Results -->
       <template v-else>
+        <section class="report-heading">
+          <h2 class="report-title">成果報告</h2>
+          <p class="report-subtitle">感謝今天的完成，你很棒喔！讓我們一起看看這次的成果 ✨</p>
+        </section>
+
         <!-- Score Hero Card -->
         <section class="score-hero">
           <div class="score-hero-left">
@@ -161,20 +170,64 @@ onMounted(async () => {
           <button class="btn btn-secondary" @click="goHome">回首頁</button>
         </section>
       </template>
+      </div>
+    </main>
     </div>
-  </div>
 </template>
 
 <style scoped>
 .dashboard-page {
   min-height: 100vh;
-  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, #dbeafe 0%, transparent 30%),
+    radial-gradient(circle at 84% 8%, #e0f2fe 0%, transparent 34%),
+    #f8fbff;
+}
+
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(52px);
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.bg-glow--left {
+  width: 320px;
+  height: 320px;
+  left: -100px;
+  top: 72px;
+  background: #60a5fa;
+}
+
+.bg-glow--right {
+  width: 340px;
+  height: 340px;
+  right: -120px;
+  top: 64px;
+  background: #7dd3fc;
+}
+
+.dashboard-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1320px;
+  margin: 18px auto 0;
+  padding: 0 20px 42px;
 }
 
 .dashboard-container {
-  max-width: 720px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 24px 20px 48px;
+  padding: 28px;
+  border-radius: 24px;
+  border: 1px solid rgba(219, 234, 254, 0.88);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.56) 0%, rgba(255, 255, 255, 0.3) 100%);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  box-shadow: 0 24px 52px rgba(15, 23, 42, 0.18);
 }
 
 /* Loading & Empty */
@@ -204,27 +257,47 @@ onMounted(async () => {
 }
 
 .loading-text {
-  color: #64748b;
-  font-size: 14px;
+  color: #475569;
+  font-size: 16px;
   margin: 0;
 }
 
 .empty-text {
-  color: #64748b;
-  font-size: 15px;
+  color: #475569;
+  font-size: 17px;
   margin: 0;
+}
+
+.report-heading {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.report-title {
+  margin: 0;
+  font-size: clamp(28px, 4.2vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.report-subtitle {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: #334155;
 }
 
 /* Score Hero Card */
 .score-hero {
   display: flex;
   align-items: center;
-  gap: 28px;
-  background: #ffffff;
-  border-radius: 20px;
-  border: 1px solid #e2e8f0;
-  padding: 28px;
-  margin-bottom: 20px;
+  gap: 34px;
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 22px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  padding: 32px;
+  margin-bottom: 22px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
 }
 
 .score-hero-left {
@@ -239,7 +312,7 @@ onMounted(async () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .score-display {
@@ -249,7 +322,7 @@ onMounted(async () => {
 }
 
 .score-number {
-  font-size: 42px;
+  font-size: 56px;
   font-weight: 800;
   line-height: 1;
 }
@@ -271,7 +344,7 @@ onMounted(async () => {
 }
 
 .score-max {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   color: #94a3b8;
 }
@@ -279,11 +352,11 @@ onMounted(async () => {
 .level-badge {
   display: inline-flex;
   align-self: flex-start;
-  padding: 4px 14px;
+  padding: 6px 16px;
   border-radius: 9999px;
   color: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 
@@ -294,8 +367,8 @@ onMounted(async () => {
 /* Feedback Section */
 .feedback-section {
   display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 18px;
+  margin-bottom: 22px;
 }
 
 .feedback-section > * {
@@ -305,36 +378,37 @@ onMounted(async () => {
 
 /* Moments Section */
 .moments-section {
-  background: #ffffff;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  padding: 20px;
-  margin-bottom: 28px;
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 18px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  padding: 24px;
+  margin-bottom: 30px;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
 }
 
 .section-title {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 16px 0;
+  margin: 0 0 18px 0;
 }
 
 /* Action Buttons */
 .action-buttons {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  padding-bottom: 16px;
+  gap: 14px;
+  padding-bottom: 8px;
 }
 
 .btn {
-  padding: 10px 28px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 12px 30px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
   border: none;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition: opacity 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease;
 }
 
 .btn:active {
@@ -342,26 +416,37 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: #2563eb;
+  background: var(--nurvo-gradient-primary);
   color: #ffffff;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  opacity: 0.96;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.34);
 }
 
 .btn-secondary {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.9);
   color: #475569;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(203, 213, 225, 0.9);
 }
 
 .btn-secondary:hover {
-  background: #f8fafc;
+  background: #ffffff;
 }
 
 /* Responsive */
 @media (max-width: 640px) {
+  .dashboard-shell {
+    padding: 0 12px 24px;
+  }
+
+  .dashboard-container {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
   .score-hero {
     flex-direction: column;
     padding: 20px;
@@ -373,7 +458,19 @@ onMounted(async () => {
   }
 
   .score-number {
-    font-size: 36px;
+    font-size: 42px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .action-buttons {
+    flex-direction: column;
   }
 }
 </style>

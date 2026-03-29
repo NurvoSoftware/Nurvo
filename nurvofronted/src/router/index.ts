@@ -15,6 +15,11 @@ const router = createRouter({
       component: () => import('../views/BriefingView.vue'),
     },
     {
+      path: '/level-select',
+      name: 'level-select',
+      component: () => import('../views/LevelSelectView.vue'),
+    },
+    {
       path: '/scene',
       name: 'scene',
       component: () => import('../views/SceneView.vue'),

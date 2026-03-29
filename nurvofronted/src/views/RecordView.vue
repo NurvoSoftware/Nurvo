@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '@/stores/gameStore'
 import { useScenarioStore } from '@/stores/scenarioStore'
@@ -14,18 +14,10 @@ const scenarioStore = useScenarioStore()
 const content = ref<string>('')
 const submitting = ref<boolean>(false)
 const errorMsg = ref<string>('')
-const remainingSeconds = ref<number>(0)
 const timerExpired = ref<boolean>(false)
-let timerInterval: ReturnType<typeof setInterval> | null = null
 
 const charCount = computed<number>(() => content.value.trim().length)
 const isValid = computed<boolean>(() => charCount.value > 0)
-
-const formattedTime = computed<string>(() => {
-  const minutes: number = Math.floor(remainingSeconds.value / 60)
-  const seconds: number = remainingSeconds.value % 60
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-})
 
 async function handleSubmit(): Promise<void> {
   if (!isValid.value || submitting.value) return
@@ -45,19 +37,6 @@ async function handleSubmit(): Promise<void> {
   }
 }
 
-function startTimer(): void {
-  if (!scenarioStore.scenario) return
-  remainingSeconds.value = scenarioStore.scenario.time_limit_seconds
-
-  timerInterval = setInterval(() => {
-    if (remainingSeconds.value > 0) {
-      remainingSeconds.value--
-    } else {
-      if (timerInterval) clearInterval(timerInterval)
-    }
-  }, 1000)
-}
-
 onMounted(() => {
   if (!gameStore.sessionId) {
     router.replace('/')
@@ -68,111 +47,175 @@ onMounted(() => {
   if (route.query.expired === '1') {
     timerExpired.value = true
   }
-
-  startTimer()
-})
-
-onBeforeUnmount(() => {
-  if (timerInterval) {
-    clearInterval(timerInterval)
-  }
 })
 </script>
 
 <template>
   <div class="record-page">
-    <NavBar :step="2" />
+    <div class="bg-glow bg-glow--left"></div>
+    <div class="bg-glow bg-glow--right"></div>
 
-    <div class="nurvo-page-container nurvo-page-container--narrow">
-      <!-- Header -->
-      <header class="record-header">
-        <h1 class="nurvo-page-title">病患記錄</h1>
-        <p class="nurvo-page-subtitle">根據對話內容撰寫評估摘要</p>
-      </header>
+    <NavBar />
 
-      <!-- Timer-expired alert (conditional) -->
-      <div v-if="timerExpired" class="record-alert">
-        <div class="record-alert__icon">&#x23F0;</div>
-        <div class="record-alert__body">
-          <div class="record-alert__title">時間到！</div>
-          <div class="record-alert__text">請完成以下病患記錄</div>
+    <main class="record-shell">
+      <section class="record-glass">
+        <header class="record-header">
+          <p class="record-eyebrow">Clinical Record Summary</p>
+          <h1 class="record-title">病患記錄</h1>
+          <p class="record-subtitle">根據對話內容撰寫評估摘要，完成後提交進入評分</p>
+        </header>
+
+        <div v-if="timerExpired" class="record-alert">
+          <div class="record-alert__icon">&#x23F0;</div>
+          <div class="record-alert__body">
+            <div class="record-alert__title">時間到！</div>
+            <div class="record-alert__text">請完成以下病患記錄</div>
+          </div>
         </div>
-      </div>
 
-      <!-- Patient reminder card -->
-      <div v-if="scenarioStore.scenario" class="record-patient">
-        <div class="record-patient__avatar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
+        <div v-if="scenarioStore.scenario" class="record-patient">
+          <div class="record-patient__avatar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <div class="record-patient__info">
+            <span class="record-patient__name">{{ scenarioStore.scenario.patient_profile.name }}</span>
+            <span class="record-patient__sep">&middot;</span>
+            <span class="record-patient__diagnosis">{{ scenarioStore.scenario.patient_profile.diagnosis }}</span>
+          </div>
         </div>
-        <div class="record-patient__info">
-          <span class="record-patient__name">{{ scenarioStore.scenario.patient_profile.name }}</span>
-          <span class="record-patient__sep">&middot;</span>
-          <span class="record-patient__diagnosis">{{ scenarioStore.scenario.patient_profile.diagnosis }}</span>
-        </div>
-      </div>
 
-      <!-- Textarea card -->
-      <div class="record-textarea-card">
-        <div class="record-textarea-card__header">
-          <span class="record-textarea-card__label">&#x1F4DD; 評估摘要</span>
+        <div class="record-textarea-card">
+          <div class="record-textarea-card__header">
+            <span class="record-textarea-card__label">&#x1F4DD; 評估摘要</span>
+          </div>
+          <textarea
+            v-model="content"
+            class="record-textarea"
+            placeholder="請描述病患的疼痛狀況、位置、程度、持續時間、你的評估與護理計畫..."
+          ></textarea>
+          <div class="record-textarea-card__footer">
+            <span class="record-textarea-card__hint">請輸入內容</span>
+            <span
+              class="record-textarea-card__count"
+              :class="{ 'record-textarea-card__count--valid': charCount > 0 }"
+            >{{ charCount }} 字</span>
+          </div>
         </div>
-        <textarea
-          v-model="content"
-          class="record-textarea"
-          placeholder="請描述病患的疼痛狀況、位置、程度、持續時間、你的評估與護理計畫..."
-        ></textarea>
-        <div class="record-textarea-card__footer">
-          <span class="record-textarea-card__hint">請輸入內容</span>
-          <span
-            class="record-textarea-card__count"
-            :class="{ 'record-textarea-card__count--valid': charCount > 0 }"
-          >{{ charCount }} 字</span>
+
+        <div v-if="errorMsg" class="record-error">
+          {{ errorMsg }}
         </div>
-      </div>
 
-      <!-- Error message -->
-      <div v-if="errorMsg" class="record-error">
-        {{ errorMsg }}
-      </div>
-
-      <!-- Submit button -->
-      <div class="record-submit">
-        <button
-          class="nurvo-btn-primary"
-          :disabled="!isValid || submitting"
-          @click="handleSubmit"
-        >
-          <span v-if="submitting" class="nurvo-spinner"></span>
-          <template v-else>提交記錄 &rarr;</template>
-        </button>
-      </div>
-    </div>
+        <div class="record-submit">
+          <button
+            class="record-btn-primary"
+            :disabled="!isValid || submitting"
+            @click="handleSubmit"
+          >
+            <span v-if="submitting" class="record-spinner"></span>
+            <template v-else>提交記錄 &rarr;</template>
+          </button>
+        </div>
+      </section>
+    </main>
   </div>
 </template>
 
 <style scoped>
 .record-page {
   min-height: 100vh;
-  background: var(--nurvo-white);
+  position: relative;
+  overflow: hidden;
+  background-image:
+    linear-gradient(180deg, rgba(8, 47, 73, 0.08) 0%, rgba(2, 6, 23, 0.2) 100%),
+    url('/hospital_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-/* Header */
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(52px);
+  pointer-events: none;
+  opacity: 0.28;
+}
+
+.bg-glow--left {
+  width: 300px;
+  height: 300px;
+  left: -96px;
+  top: 72px;
+  background: #60a5fa;
+}
+
+.bg-glow--right {
+  width: 330px;
+  height: 330px;
+  right: -110px;
+  top: 68px;
+  background: #7dd3fc;
+}
+
+.record-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1040px;
+  margin: 18px auto 0;
+  padding: 0 20px 38px;
+}
+
+.record-glass {
+  max-width: 780px;
+  margin: 0 auto;
+  border-radius: 24px;
+  border: 1px solid rgba(219, 234, 254, 0.88);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.56) 0%, rgba(255, 255, 255, 0.3) 100%);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  box-shadow: 0 24px 52px rgba(15, 23, 42, 0.2);
+  padding: 24px;
+}
+
 .record-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
-/* Timer-expired alert */
+.record-eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1e40af;
+}
+
+.record-title {
+  margin: 0;
+  font-size: clamp(30px, 4.4vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+}
+
+.record-subtitle {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: #334155;
+}
+
 .record-alert {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: var(--nurvo-warning-light);
-  border: 1px solid var(--nurvo-warning-border);
-  border-radius: var(--nurvo-radius-md);
+  background: rgba(255, 251, 235, 0.88);
+  border: 1px solid rgba(252, 211, 77, 0.8);
+  border-radius: 14px;
   padding: 14px 16px;
   margin-bottom: 16px;
 }
@@ -190,23 +233,22 @@ onBeforeUnmount(() => {
 }
 
 .record-alert__title {
-  font-size: var(--nurvo-font-size-lg);
+  font-size: 16px;
   font-weight: 700;
   color: var(--nurvo-warning-darker);
 }
 
 .record-alert__text {
-  font-size: var(--nurvo-font-size-base);
+  font-size: 14px;
   color: var(--nurvo-warning-dark);
 }
 
-/* Patient reminder */
 .record-patient {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--nurvo-white);
-  border: 1px solid var(--nurvo-border);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(203, 213, 225, 0.9);
   border-radius: 14px;
   padding: 10px 14px;
   margin-bottom: 16px;
@@ -228,7 +270,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--nurvo-font-size-base);
+  font-size: 14px;
   color: var(--nurvo-text-secondary);
 }
 
@@ -245,11 +287,10 @@ onBeforeUnmount(() => {
   color: var(--nurvo-text-secondary);
 }
 
-/* Textarea card */
 .record-textarea-card {
-  background: var(--nurvo-white);
-  border: 1px solid var(--nurvo-border);
-  border-radius: var(--nurvo-radius-lg);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 18px;
   overflow: hidden;
   margin-bottom: 20px;
 }
@@ -262,7 +303,7 @@ onBeforeUnmount(() => {
 }
 
 .record-textarea-card__label {
-  font-size: var(--nurvo-font-size-md);
+  font-size: 14px;
   font-weight: 600;
   color: var(--nurvo-text-primary);
 }
@@ -276,7 +317,7 @@ onBeforeUnmount(() => {
   outline: none;
   resize: vertical;
   font-family: var(--nurvo-font-family);
-  font-size: var(--nurvo-font-size-base);
+  font-size: 15px;
   line-height: 1.7;
   color: var(--nurvo-text-primary);
   background: transparent;
@@ -288,7 +329,7 @@ onBeforeUnmount(() => {
 }
 
 .record-textarea:focus {
-  background: var(--nurvo-surface);
+  background: rgba(248, 250, 252, 0.82);
 }
 
 .record-textarea-card__footer {
@@ -300,12 +341,12 @@ onBeforeUnmount(() => {
 }
 
 .record-textarea-card__hint {
-  font-size: var(--nurvo-font-size-sm);
+  font-size: 12px;
   color: var(--nurvo-text-muted);
 }
 
 .record-textarea-card__count {
-  font-size: var(--nurvo-font-size-sm);
+  font-size: 12px;
   color: var(--nurvo-text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -315,20 +356,84 @@ onBeforeUnmount(() => {
   font-weight: 600;
 }
 
-/* Error */
 .record-error {
-  background: var(--nurvo-danger-light);
+  background: rgba(254, 242, 242, 0.92);
   color: var(--nurvo-danger-dark);
   border: 1px solid var(--nurvo-danger-border);
-  border-radius: var(--nurvo-radius-md);
+  border-radius: 12px;
   padding: 10px 14px;
-  font-size: var(--nurvo-font-size-base);
+  font-size: 14px;
   margin-bottom: 16px;
 }
 
-/* Submit */
 .record-submit {
   display: flex;
   justify-content: center;
+}
+
+.record-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 190px;
+  padding: 12px 26px;
+  border: none;
+  border-radius: 12px;
+  background: var(--nurvo-gradient-primary);
+  color: var(--nurvo-white);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.record-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.34);
+}
+
+.record-btn-primary:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.record-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: var(--nurvo-white);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .record-shell {
+    padding: 0 12px 24px;
+  }
+
+  .record-glass {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .record-title {
+    font-size: 30px;
+  }
+
+  .record-subtitle {
+    font-size: 14px;
+  }
+
+  .record-patient__info {
+    flex-wrap: wrap;
+  }
 }
 </style>

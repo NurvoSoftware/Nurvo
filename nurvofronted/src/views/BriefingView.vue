@@ -34,99 +34,158 @@ function enterScene(): void {
 
 <template>
   <div class="briefing-page" v-if="scenarioStore.scenario">
-    <NavBar :step="1" />
+    <div class="bg-glow bg-glow--left"></div>
+    <div class="bg-glow bg-glow--right"></div>
 
-    <div class="briefing-container">
-      <!-- Header -->
-      <header class="briefing-header">
+    <NavBar />
+
+    <main class="briefing-shell">
+      <section class="briefing-glass">
+        <header class="briefing-header">
+          <p class="briefing-eyebrow">Clinical Scenario Briefing</p>
         <h1 class="briefing-title">任務簡報</h1>
         <p class="briefing-subtitle">請仔細閱讀以下病患資料，準備進入溝通場景</p>
       </header>
 
-      <!-- Patient card -->
-      <PatientCard
-        :patient="scenarioStore.scenario.patient_profile"
-        :pain-severity="painSeverity"
-      />
+        <div class="patient-card-wrap">
+          <PatientCard
+            :patient="scenarioStore.scenario.patient_profile"
+            :pain-severity="painSeverity"
+          />
+        </div>
 
-      <!-- Two-column row: family + goals -->
-      <div class="two-col-row">
-        <!-- Family info card -->
-        <div class="info-card family-card">
-          <div class="info-card-header">
-            <div class="family-avatar">&#x1F464;</div>
-            <div class="family-name-block">
-              <span class="family-name">{{ scenarioStore.scenario.family_member.name }}</span>
-              <span class="family-rel">{{ scenarioStore.scenario.family_member.relationship }}</span>
+        <div class="two-col-row">
+          <div class="info-card family-card">
+            <div class="info-card-header">
+              <div class="family-avatar">&#x1F464;</div>
+              <div class="family-name-block">
+                <span class="family-name">{{ scenarioStore.scenario.family_member.name }}</span>
+                <span class="family-rel">{{ scenarioStore.scenario.family_member.relationship }}</span>
+              </div>
+            </div>
+            <div class="family-tags">
+              <span class="ftag">{{ scenarioStore.scenario.family_member.personality }}</span>
+              <span class="ftag">{{ scenarioStore.scenario.family_member.emotional_state }}</span>
             </div>
           </div>
-          <div class="family-tags">
-            <span class="ftag">{{ scenarioStore.scenario.family_member.personality }}</span>
-            <span class="ftag">{{ scenarioStore.scenario.family_member.emotional_state }}</span>
+
+          <div class="info-card goals-card">
+            <div class="goals-title">&#x1F3AF; 溝通挑戰</div>
+            <ul class="goals-list">
+              <li
+                v-for="challenge in scenarioStore.scenario.communication_challenges"
+                :key="challenge"
+              >{{ challenge }}</li>
+            </ul>
           </div>
         </div>
 
-        <!-- Communication goals card -->
-        <div class="info-card goals-card">
-          <div class="goals-title">&#x1F3AF; 溝通挑戰</div>
-          <ul class="goals-list">
-            <li
-              v-for="challenge in scenarioStore.scenario.communication_challenges"
-              :key="challenge"
-            >{{ challenge }}</li>
-          </ul>
+        <div class="action-bar">
+          <div class="time-info">
+            <span class="time-icon">&#x23F1;</span>
+            <span class="time-text">限時 {{ timeLimit }} 分鐘</span>
+          </div>
+          <button class="cta-button" @click="enterScene">
+            進入場景 <span class="cta-arrow">&rarr;</span>
+          </button>
         </div>
-      </div>
-
-      <!-- Bottom action bar -->
-      <div class="action-bar">
-        <div class="time-info">
-          <span class="time-icon">&#x23F1;</span>
-          <span class="time-text">限時 {{ timeLimit }} 分鐘</span>
-        </div>
-        <button class="cta-button" @click="enterScene">
-          進入場景 <span class="cta-arrow">&rarr;</span>
-        </button>
-      </div>
-    </div>
+      </section>
+    </main>
   </div>
 </template>
 
 <style scoped>
 .briefing-page {
   min-height: 100vh;
-  background: var(--nurvo-white);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 16% 12%, #dbeafe 0%, transparent 30%),
+    radial-gradient(circle at 84% 10%, #e0f2fe 0%, transparent 34%),
+    #f8fbff;
 }
 
-.briefing-container {
-  max-width: 680px;
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(56px);
+  pointer-events: none;
+  opacity: 0.38;
+}
+
+.bg-glow--left {
+  width: 300px;
+  height: 300px;
+  left: -96px;
+  top: 110px;
+  background: #60a5fa;
+}
+
+.bg-glow--right {
+  width: 340px;
+  height: 340px;
+  right: -130px;
+  top: 86px;
+  background: #7dd3fc;
+}
+
+.briefing-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 1120px;
+  margin: 28px auto 0;
+  padding: 0 20px 44px;
+}
+
+.briefing-glass {
+  max-width: 900px;
   margin: 0 auto;
-  padding: 24px 20px 40px;
+  border-radius: 26px;
+  border: 1px solid rgba(219, 234, 254, 0.9);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 24px 54px rgba(15, 23, 42, 0.14);
+  padding: 30px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
-/* ---- Header ---- */
 .briefing-header {
   text-align: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.briefing-eyebrow {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--nurvo-primary-dark);
 }
 
 .briefing-title {
-  font-size: var(--nurvo-font-size-2xl);
-  font-weight: 700;
+  font-size: clamp(32px, 4.6vw, 42px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
   color: var(--nurvo-text-primary);
-  margin: 0 0 6px 0;
-}
-
-.briefing-subtitle {
-  font-size: var(--nurvo-font-size-md);
-  color: var(--nurvo-text-secondary);
   margin: 0;
 }
 
-/* ---- Two-column row ---- */
+.briefing-subtitle {
+  margin: 10px 0 0;
+  font-size: 15px;
+  color: #475569;
+}
+
+.patient-card-wrap {
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.7);
+  padding: 10px;
+}
+
 .two-col-row {
   display: flex;
   gap: 14px;
@@ -134,15 +193,14 @@ function enterScene(): void {
 
 .info-card {
   flex: 1;
-  border: 1px solid var(--nurvo-border);
-  border-radius: var(--nurvo-radius-md);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 16px;
   padding: 16px;
-  box-shadow: var(--nurvo-shadow-xs);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
-/* Family card */
 .family-card {
-  background: var(--nurvo-family-bg);
+  background: linear-gradient(145deg, rgba(255, 244, 231, 0.86), rgba(255, 255, 255, 0.9));
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -155,8 +213,8 @@ function enterScene(): void {
 }
 
 .family-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--nurvo-family), var(--nurvo-family-dark));
   display: flex;
@@ -173,14 +231,14 @@ function enterScene(): void {
 }
 
 .family-name {
-  font-size: var(--nurvo-font-size-lg);
+  font-size: 18px;
   font-weight: 700;
   color: var(--nurvo-text-primary);
   line-height: 1.3;
 }
 
 .family-rel {
-  font-size: var(--nurvo-font-size-base);
+  font-size: 14px;
   color: var(--nurvo-family-text);
   line-height: 1.3;
 }
@@ -193,26 +251,25 @@ function enterScene(): void {
 
 .ftag {
   display: inline-block;
-  font-size: var(--nurvo-font-size-base);
+  font-size: 13px;
   font-weight: 500;
-  padding: 3px 10px;
-  border-radius: var(--nurvo-radius-pill);
+  padding: 4px 10px;
+  border-radius: 999px;
   background: var(--nurvo-warning-bg);
   color: var(--nurvo-warning-darker);
   border: 1px solid var(--nurvo-warning-border);
   line-height: 1.5;
 }
 
-/* Goals card */
 .goals-card {
-  background: var(--nurvo-white);
+  background: rgba(255, 255, 255, 0.88);
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
 .goals-title {
-  font-size: var(--nurvo-font-size-lg);
+  font-size: 18px;
   font-weight: 700;
   color: var(--nurvo-text-primary);
 }
@@ -226,19 +283,18 @@ function enterScene(): void {
 }
 
 .goals-list li {
-  font-size: var(--nurvo-font-size-md);
+  font-size: 14px;
   color: var(--nurvo-text-secondary);
   line-height: 1.5;
 }
 
-/* ---- Action bar ---- */
 .action-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--nurvo-surface);
-  border: 1px solid var(--nurvo-border);
-  border-radius: var(--nurvo-radius-md);
+  background: rgba(241, 245, 249, 0.82);
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  border-radius: 14px;
   padding: 14px 20px;
   margin-top: 4px;
 }
@@ -254,7 +310,7 @@ function enterScene(): void {
 }
 
 .time-text {
-  font-size: var(--nurvo-font-size-md);
+  font-size: 15px;
   font-weight: 600;
   color: var(--nurvo-text-secondary);
 }
@@ -266,18 +322,19 @@ function enterScene(): void {
   background: var(--nurvo-gradient-primary);
   color: var(--nurvo-white);
   border: none;
-  border-radius: var(--nurvo-radius-sm);
+  border-radius: 10px;
   padding: 10px 24px;
-  font-size: var(--nurvo-font-size-lg);
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--nurvo-shadow-button);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .cta-button:hover {
-  opacity: 0.92;
-  transform: translateY(-1px);
+  opacity: 0.96;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.34);
 }
 
 .cta-button:active {
@@ -288,10 +345,33 @@ function enterScene(): void {
   font-size: 16px;
 }
 
-/* ---- Responsive ---- */
-@media (max-width: 540px) {
+@media (max-width: 860px) {
+  .briefing-glass {
+    padding: 24px;
+  }
+
   .two-col-row {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 540px) {
+  .briefing-shell {
+    margin-top: 18px;
+    padding: 0 14px 30px;
+  }
+
+  .briefing-glass {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .briefing-title {
+    font-size: 30px;
+  }
+
+  .briefing-subtitle {
+    font-size: 14px;
   }
 
   .action-bar {

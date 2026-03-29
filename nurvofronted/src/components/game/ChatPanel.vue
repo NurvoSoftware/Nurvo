@@ -185,7 +185,7 @@ watch(
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--nurvo-white);
+  background: transparent;
 }
 
 /* Tab bar */
@@ -194,6 +194,7 @@ watch(
   padding: 8px 12px;
   gap: 6px;
   border-bottom: 1px solid var(--nurvo-border-light);
+  background: rgba(255, 255, 255, 0.18);
   flex-shrink: 0;
 }
 
@@ -223,6 +224,7 @@ watch(
   flex: 1;
   overflow-y: auto;
   padding: 12px;
+  background: transparent;
 }
 
 .messages-area::-webkit-scrollbar {
@@ -244,19 +246,21 @@ watch(
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--nurvo-text-muted);
+  color: #ffffff;
   text-align: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .empty-state p {
   margin: 0;
-  font-size: 13px;
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
 }
 
 .empty-hint {
-  font-size: 11px !important;
-  opacity: 0.7;
+  font-size: 14px !important;
+  opacity: 0.9;
 }
 
 /* Typing indicator */
@@ -322,6 +326,7 @@ watch(
 .input-area {
   border-top: 1px solid var(--nurvo-border-light);
   padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.2);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;

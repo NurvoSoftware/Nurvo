@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, defineAsyncComponent } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScenarioStore } from '@/stores/scenarioStore'
 import { useGameStore } from '@/stores/gameStore'
@@ -12,17 +12,6 @@ import PatientCard from '@/components/game/PatientCard.vue'
 import TimerBar from '@/components/game/TimerBar.vue'
 import Dialog from 'primevue/dialog'
 import type { ChatMessage } from '@/types/game'
-
-const SceneCanvas3D = defineAsyncComponent(() => import('@/components/game/SceneCanvas3D.vue'))
-
-function isWebGL2Available(): boolean {
-  try {
-    const canvas = document.createElement('canvas')
-    return !!canvas.getContext('webgl2')
-  } catch { return false }
-}
-
-const webglSupported = isWebGL2Available()
 
 const router = useRouter()
 const scenarioStore = useScenarioStore()
@@ -40,7 +29,8 @@ const scenarioTitle = computed<string>(() => {
 
 const latestNpcMessage = computed<ChatMessage | null>(() => {
   const npcMessages = chatStore.messages.filter((m: ChatMessage) => m.sender !== 'nurse')
-  return npcMessages.length > 0 ? npcMessages[npcMessages.length - 1] : null
+  const lastMessage = npcMessages[npcMessages.length - 1]
+  return lastMessage ?? null
 })
 
 function handleSelectTarget(target: 'patient' | 'family'): void {
@@ -93,14 +83,18 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="scene" v-if="scenarioStore.scenario">
-    <!-- Custom Toolbar -->
+    <div class="bg-glow bg-glow--left"></div>
+    <div class="bg-glow bg-glow--right"></div>
+
     <div class="scene-toolbar">
       <div class="toolbar-left">
         <div class="toolbar-logo">
-          <div class="nurvo-nav-logo-icon">N</div>
+          <div class="toolbar-logo-icon">N</div>
+          <span class="toolbar-brand">Nurvo</span>
+        </div>
+        <div class="toolbar-title-wrap">
           <span class="toolbar-title">{{ scenarioTitle }}</span>
         </div>
-        <div class="toolbar-divider"></div>
         <div class="toolbar-status">
           <div class="status-dot" :class="{ 'status-dot--connected': chatStore.isConnected }"></div>
           <span class="status-text" :class="{ 'status-text--connected': chatStore.isConnected }">
@@ -119,7 +113,32 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Patient info Dialog -->
+    <div class="scene-main">
+      <div class="scene-map">
+        <!--
+        <SceneCanvas3D
+          v-if="webglSupported"
+          :patient-name="scenarioStore.scenario.patient_profile.name"
+          :family-name="scenarioStore.scenario.family_member.name"
+          :latest-message="latestNpcMessage"
+          @select-target="handleSelectTarget"
+        />
+        -->
+        <SceneFallback2D
+          :patient-name="scenarioStore.scenario.patient_profile.name"
+          :family-name="scenarioStore.scenario.family_member.name"
+          :latest-message="latestNpcMessage"
+          @select-target="handleSelectTarget"
+        />
+      </div>
+
+      <aside class="chat-dock">
+        <div class="chat-glass">
+          <ChatPanel />
+        </div>
+      </aside>
+    </div>
+
     <Dialog
       v-model:visible="showPatientInfo"
       header="病患資訊"
@@ -133,28 +152,6 @@ onBeforeUnmount(() => {
       />
     </Dialog>
 
-    <!-- Main layout: 60/40 split -->
-    <div class="scene-layout">
-      <div class="scene-left">
-        <SceneCanvas3D
-          v-if="webglSupported"
-          :patient-name="scenarioStore.scenario.patient_profile.name"
-          :family-name="scenarioStore.scenario.family_member.name"
-          :latest-message="latestNpcMessage"
-          @select-target="handleSelectTarget"
-        />
-        <SceneFallback2D
-          v-else
-          :patient-name="scenarioStore.scenario.patient_profile.name"
-          :family-name="scenarioStore.scenario.family_member.name"
-          :latest-message="latestNpcMessage"
-          @select-target="handleSelectTarget"
-        />
-      </div>
-      <div class="scene-right">
-        <ChatPanel />
-      </div>
-    </div>
   </div>
 </template>
 
@@ -163,18 +160,48 @@ onBeforeUnmount(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--nurvo-white);
+  position: relative;
+  background:
+    radial-gradient(circle at 18% 12%, #dbeafe 0%, transparent 30%),
+    radial-gradient(circle at 84% 8%, #e0f2fe 0%, transparent 34%),
+    #f8fbff;
   overflow: hidden;
 }
 
-/* Toolbar */
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(52px);
+  pointer-events: none;
+  opacity: 0.36;
+}
+
+.bg-glow--left {
+  width: 290px;
+  height: 290px;
+  left: -100px;
+  top: 74px;
+  background: #60a5fa;
+}
+
+.bg-glow--right {
+  width: 320px;
+  height: 320px;
+  right: -120px;
+  top: 66px;
+  background: #7dd3fc;
+}
+
 .scene-toolbar {
+  position: relative;
+  z-index: 3;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 16px;
-  background: var(--nurvo-white);
-  border-bottom: 1px solid var(--nurvo-border);
+  margin: 0;
+  padding: 13px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(203, 213, 225, 0.85);
   flex-shrink: 0;
 }
 
@@ -187,42 +214,71 @@ onBeforeUnmount(() => {
 .toolbar-logo {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-.toolbar-title {
-  font-size: 12px;
-  font-weight: 600;
+.toolbar-logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--nurvo-gradient-logo);
+  color: var(--nurvo-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.24);
+}
+
+.toolbar-brand {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--nurvo-text-primary);
 }
 
+.toolbar-title-wrap {
+  max-width: 520px;
+}
+
+.toolbar-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .toolbar-divider {
-  width: 1px;
-  height: 16px;
-  background: var(--nurvo-border);
+  display: none;
 }
 
 .toolbar-status {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .status-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--nurvo-warning);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
 }
 
 .status-dot--connected {
   background: var(--nurvo-success);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
 }
 
 .status-text {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--nurvo-warning);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .status-text--connected {
@@ -232,40 +288,126 @@ onBeforeUnmount(() => {
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .patient-info-btn {
-  background: var(--nurvo-surface);
-  padding: 4px 10px;
-  border-radius: var(--nurvo-radius-sm);
-  font-size: 10px;
-  color: var(--nurvo-text-secondary);
-  border: 1px solid var(--nurvo-border);
+  background: rgba(248, 250, 252, 0.94);
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #334155;
+  border: 1px solid #dbeafe;
   cursor: pointer;
   font-family: var(--nurvo-font-family);
-  transition: background 0.2s;
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
 }
 
 .patient-info-btn:hover {
-  background: var(--nurvo-border-light);
+  background: #ffffff;
+  border-color: #93c5fd;
+  transform: translateY(-1px);
 }
 
-/* Main layout */
-.scene-layout {
+.scene-main {
+  position: relative;
   flex: 1;
-  display: flex;
+  min-height: 0;
   overflow: hidden;
 }
 
-.scene-left {
-  flex: 6;
+.scene-map {
+  height: 100%;
+  border-top: 1px solid rgba(219, 234, 254, 0.7);
   overflow: hidden;
-  border-right: 1px solid var(--nurvo-border);
+  background: linear-gradient(180deg, #edf6ff 0%, #eef2ff 42%, #e2e8f0 100%);
 }
 
-.scene-right {
-  flex: 4;
-  min-width: 300px;
+.chat-dock {
+  position: absolute;
+  top: 26px;
+  right: clamp(26px, 3.6vw, 56px);
+  width: min(420px, 34vw);
+  height: calc(100% - 52px);
+  z-index: 2;
+}
+
+.chat-glass {
+  position: relative;
+  height: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(191, 219, 254, 0.72);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.36) 0%,
+    rgba(255, 255, 255, 0.2) 100%
+  );
+  backdrop-filter: blur(22px) saturate(130%);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
+}
+
+.chat-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.34) 0%,
+    rgba(255, 255, 255, 0) 36%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chat-glass > * {
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 980px) {
+  .chat-dock {
+    position: static;
+    width: 100%;
+    height: 340px;
+    padding: 12px;
+    background: transparent;
+  }
+
+  .scene-main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scene-map {
+    height: calc(100% - 340px);
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .scene-toolbar {
+    padding: 10px 12px;
+  }
+
+  .toolbar-left {
+    gap: 8px;
+  }
+
+  .toolbar-title-wrap,
+  .toolbar-status {
+    display: none;
+  }
+
+  .chat-dock {
+    height: 46vh;
+    min-height: 280px;
+    padding: 8px;
+  }
+
+  .chat-glass {
+    border-radius: 14px;
+  }
 }
 </style>
