@@ -28,7 +28,6 @@ async def generate_scenario_endpoint() -> dict:
     # Build system prompts for patient and family NPCs
     patient = scenario.patient_profile
     pain = scenario.pain_details
-    family = scenario.family_member
 
     patient_system_prompt = build_patient_prompt(
         name=patient.name,
@@ -45,14 +44,17 @@ async def generate_scenario_endpoint() -> dict:
         associated_symptoms=pain.associated_symptoms,
     )
 
-    family_system_prompt = build_family_prompt(
-        family_name=family.name,
-        relationship=family.relationship,
-        personality=family.personality,
-        emotional_state=family.emotional_state,
-        patient_name=patient.name,
-        interjection_triggers=family.interjection_triggers,
-    )
+    family_system_prompts = [
+        build_family_prompt(
+            family_name=fm.name,
+            relationship=fm.relationship,
+            personality=fm.personality,
+            emotional_state=fm.emotional_state,
+            patient_name=patient.name,
+            interjection_triggers=fm.interjection_triggers,
+        )
+        for fm in scenario.family_members
+    ]
 
     # Create and store game session
     game_session = GameSession(
@@ -60,7 +62,7 @@ async def generate_scenario_endpoint() -> dict:
         scenario_data=scenario.model_dump(),
         status=SessionStatus.BRIEFING,
         patient_system_prompt=patient_system_prompt,
-        family_system_prompt=family_system_prompt,
+        family_system_prompts=family_system_prompts,
     )
     create_session(game_session)
 

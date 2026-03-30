@@ -1,6 +1,6 @@
 """Scenario-related Pydantic models."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class PatientProfile(BaseModel):
@@ -42,7 +42,14 @@ class CorrectAnswers(BaseModel):
 class Scenario(BaseModel):
     patient_profile: PatientProfile
     pain_details: PainDetails
-    family_member: FamilyMember
+    family_members: list[FamilyMember]
     communication_challenges: list[str]
     correct_answers: CorrectAnswers
     time_limit_seconds: int = 480
+
+    @field_validator("family_members")
+    @classmethod
+    def exactly_three_family_members(cls, v: list[FamilyMember]) -> list[FamilyMember]:
+        if len(v) != 3:
+            raise ValueError(f"必須恰好有 3 位家屬，目前有 {len(v)} 位")
+        return v

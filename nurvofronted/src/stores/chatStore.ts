@@ -1,18 +1,18 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { ChatMessage } from '@/types/game'
+import type { ChatMessage, FamilySender } from '@/types/game'
 
 export const useChatStore = defineStore('chat', () => {
   const messages = ref<ChatMessage[]>([])
   const isConnected = ref(false)
-  const typingIndicator = ref<'patient' | 'family' | null>(null)
-  const currentTarget = ref<'patient' | 'family'>('patient')
+  const typingIndicator = ref<'patient' | FamilySender | null>(null)
+  const currentTarget = ref<'patient' | FamilySender>('patient')
 
   function addMessage(message: ChatMessage) {
     messages.value.push(message)
   }
 
-  function setTarget(target: 'patient' | 'family') {
+  function setTarget(target: 'patient' | FamilySender) {
     currentTarget.value = target
   }
 
@@ -25,7 +25,7 @@ export const useChatStore = defineStore('chat', () => {
     isConnected.value = connected
   }
 
-  function setTyping(sender: 'patient' | 'family' | null) {
+  function setTyping(sender: 'patient' | FamilySender | null) {
     typingIndicator.value = sender
   }
 

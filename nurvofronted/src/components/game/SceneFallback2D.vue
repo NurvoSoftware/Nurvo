@@ -1,24 +1,30 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ChatMessage } from '@/types/game'
+import type { ChatMessage, FamilyMember, FamilySender } from '@/types/game'
 
 const props = defineProps<{
   patientName?: string
-  familyName?: string
+  familyMembers?: FamilyMember[]
   latestMessage?: ChatMessage | null
 }>()
 
 const emit = defineEmits<{
-  (e: 'select-target', target: 'patient' | 'family'): void
+  (e: 'select-target', target: 'patient' | FamilySender): void
 }>()
 
 const showPatientBubble = computed<boolean>(() => props.latestMessage?.sender === 'patient')
-const showFamilyBubble = computed<boolean>(() => props.latestMessage?.sender === 'family')
+
+function showFamilyBubble(index: number): boolean {
+  return props.latestMessage?.sender === `family_${index}`
+}
+
 const truncatedContent = computed<string>(() => {
   if (!props.latestMessage) return ''
   const content: string = props.latestMessage.content
   return content.length > 60 ? content.slice(0, 60) + '...' : content
 })
+
+const familyPositions = ['8%', '20%', '32%']
 </script>
 
 <template>
@@ -61,20 +67,23 @@ const truncatedContent = computed<string>(() => {
         <span class="character-label">{{ patientName || '病患' }}</span>
       </div>
 
-      <!-- Family -->
+      <!-- Family Members -->
       <div
+        v-for="(fm, idx) in (familyMembers ?? [])"
+        :key="`family-${idx}`"
         class="character family"
+        :style="{ right: familyPositions[idx] }"
         role="button"
-        :title="'點擊與' + (familyName || '家屬') + '對話'"
-        @click="emit('select-target', 'family')"
+        :title="'點擊與' + fm.name + '對話'"
+        @click="emit('select-target', `family_${idx}` as FamilySender)"
       >
-        <div v-if="showFamilyBubble" class="speech-bubble speech-bubble--family">
+        <div v-if="showFamilyBubble(idx)" class="speech-bubble speech-bubble--family">
           <p>{{ truncatedContent }}</p>
         </div>
         <div class="person-head person-head--family"></div>
         <div class="person-body person-body--family"></div>
         <div class="person-legs"></div>
-        <span class="character-label">{{ familyName || '家屬' }}</span>
+        <span class="character-label">{{ fm.name }}</span>
       </div>
 
       <!-- Nurse -->
@@ -225,7 +234,7 @@ const truncatedContent = computed<string>(() => {
 }
 
 .character.patient { top: 34%; left: 32%; }
-.character.family { top: 32%; right: 15%; }
+.character.family { top: 32%; }
 .character.nurse { bottom: 8%; left: 50%; transform: translateX(-50%); cursor: default; }
 
 /* Heads */

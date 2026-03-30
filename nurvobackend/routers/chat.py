@@ -172,16 +172,17 @@ async def chat_websocket(ws: WebSocket, session_id: str) -> None:
 
             # Check for family interjection when nurse talks to patient
             if target == "patient":
-                interjection_text, did_interject, interjection_audio = await maybe_family_interjection(session)
+                interjection_text, did_interject, interjection_audio, family_index = await maybe_family_interjection(session)
 
                 if did_interject:
+                    family_sender = f"family_{family_index}"
 
                     elapsed = _elapsed_seconds(session.start_time)
                     interjection_id = str(uuid.uuid4())
 
                     interjection_chat = ChatMessage(
                         id=interjection_id,
-                        sender="family",
+                        sender=family_sender,
                         content=interjection_text,
                         timestamp=datetime.now(timezone.utc),
                         elapsed_seconds=elapsed,
@@ -190,12 +191,12 @@ async def chat_websocket(ws: WebSocket, session_id: str) -> None:
                     session.conversation_history.append(interjection_chat)
                     update_session(session)
 
-                    # Send typing indicator for family
-                    await _send_json(ws, {"type": "typing", "sender": "family"})
+                    # Send typing indicator for the specific family member
+                    await _send_json(ws, {"type": "typing", "sender": family_sender})
 
                     interjection_payload: dict = {
                         "type": "npc_message",
-                        "sender": "family",
+                        "sender": family_sender,
                         "content": interjection_text,
                         "message_id": interjection_id,
                         "elapsed_seconds": elapsed,

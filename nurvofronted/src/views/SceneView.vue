@@ -11,7 +11,7 @@ import ChatPanel from '@/components/game/ChatPanel.vue'
 import PatientCard from '@/components/game/PatientCard.vue'
 import TimerBar from '@/components/game/TimerBar.vue'
 import Dialog from 'primevue/dialog'
-import type { ChatMessage } from '@/types/game'
+import type { ChatMessage, FamilySender } from '@/types/game'
 
 const SceneCanvas3D = defineAsyncComponent(() => import('@/components/game/SceneCanvas3D.vue'))
 
@@ -43,7 +43,7 @@ const latestNpcMessage = computed<ChatMessage | null>(() => {
   return npcMessages.length > 0 ? npcMessages[npcMessages.length - 1] : null
 })
 
-function handleSelectTarget(target: 'patient' | 'family'): void {
+function handleSelectTarget(target: 'patient' | FamilySender): void {
   chatStore.setTarget(target)
 }
 
@@ -139,14 +139,14 @@ onBeforeUnmount(() => {
         <SceneCanvas3D
           v-if="webglSupported"
           :patient-name="scenarioStore.scenario.patient_profile.name"
-          :family-name="scenarioStore.scenario.family_member.name"
+          :family-members="scenarioStore.scenario.family_members"
           :latest-message="latestNpcMessage"
           @select-target="handleSelectTarget"
         />
         <SceneFallback2D
           v-else
           :patient-name="scenarioStore.scenario.patient_profile.name"
-          :family-name="scenarioStore.scenario.family_member.name"
+          :family-members="scenarioStore.scenario.family_members"
           :latest-message="latestNpcMessage"
           @select-target="handleSelectTarget"
         />

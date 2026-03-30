@@ -53,7 +53,7 @@ def _build_scenario_summary(scenario_data: dict) -> str:
     """Build a human-readable scenario summary from raw scenario data."""
     patient = scenario_data.get("patient_profile", {})
     pain = scenario_data.get("pain_details", {})
-    family = scenario_data.get("family_member", {})
+    family_members = scenario_data.get("family_members", [])
 
     parts = []
     if patient:
@@ -68,10 +68,10 @@ def _build_scenario_summary(scenario_data: dict) -> str:
             f"嚴重程度：{pain.get('severity', '?')}/10，"
             f"類型：{pain.get('type', '未知')}"
         )
-    if family:
+    for i, fm in enumerate(family_members):
         parts.append(
-            f"家屬：{family.get('name', '未知')}（{family.get('relationship', '未知')}），"
-            f"情緒狀態：{family.get('emotional_state', '未知')}"
+            f"家屬{i + 1}：{fm.get('name', '未知')}（{fm.get('relationship', '未知')}），"
+            f"情緒狀態：{fm.get('emotional_state', '未知')}"
         )
 
     challenges = scenario_data.get("communication_challenges", [])
@@ -84,9 +84,13 @@ def _build_scenario_summary(scenario_data: dict) -> str:
 def _build_conversation_transcript(session: GameSession) -> str:
     """Build a readable conversation transcript from chat history."""
     lines = []
-    sender_labels = {"nurse": "護理師", "patient": "病患", "family": "家屬"}
+    sender_labels = {"nurse": "護理師", "patient": "病患"}
     for msg in session.conversation_history:
-        label = sender_labels.get(msg.sender, msg.sender)
+        if msg.sender.startswith("family_"):
+            idx = int(msg.sender.split("_")[1])
+            label = f"家屬{idx + 1}"
+        else:
+            label = sender_labels.get(msg.sender, msg.sender)
         elapsed = f"[{msg.elapsed_seconds:.0f}s]"
         interjection = "（插話）" if msg.is_interjection else ""
         lines.append(f"{elapsed} {label}{interjection}：{msg.content}")

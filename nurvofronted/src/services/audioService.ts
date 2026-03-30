@@ -1,11 +1,14 @@
 /**
  * Audio playback service for TTS audio (base64-encoded).
- * Manages a playback queue so overlapping audio plays in sequence.
+ * Uses AudioContext for playback. The context is unlocked on the first user
+ * gesture via {@link unlock} so that subsequent WebSocket-driven playback
+ * is not blocked by Chrome's autoplay policy.
  */
 
 let audioContext: AudioContext | null = null
 let currentSource: AudioBufferSourceNode | null = null
 let isPlaying = false
+let unlocked = false
 const queue: string[] = []
 
 function getAudioContext(): AudioContext {
@@ -13,6 +16,25 @@ function getAudioContext(): AudioContext {
     audioContext = new AudioContext()
   }
   return audioContext
+}
+
+/**
+ * Call once during a user gesture (click / keydown) to unlock the AudioContext.
+ * After this, audio can be played freely from any async callback.
+ */
+export function unlock(): void {
+  if (unlocked) return
+  const ctx = getAudioContext()
+  if (ctx.state === 'suspended') {
+    ctx.resume()
+  }
+  // Play a silent buffer to fully unlock on iOS / Chrome
+  const buf = ctx.createBuffer(1, 1, ctx.sampleRate)
+  const src = ctx.createBufferSource()
+  src.buffer = buf
+  src.connect(ctx.destination)
+  src.start(0)
+  unlocked = true
 }
 
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
@@ -27,7 +49,6 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 async function playBuffer(base64Audio: string): Promise<void> {
   const ctx = getAudioContext()
 
-  // Resume context if suspended (browser autoplay policy)
   if (ctx.state === 'suspended') {
     await ctx.resume()
   }
@@ -71,7 +92,9 @@ async function processQueue(): Promise<void> {
 export function decodeAndPlay(base64Audio: string): void {
   if (!base64Audio) return
   queue.push(base64Audio)
-  processQueue()
+  processQueue().catch((err) => {
+    console.error('[audioService] processQueue error:', err)
+  })
 }
 
 /**

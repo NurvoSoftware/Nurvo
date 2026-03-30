@@ -1,11 +1,16 @@
 """Conversation engine service for patient and family NPC responses."""
 
+import re
+
 from fastapi import HTTPException
 from openai import AsyncOpenAI
 
 from config import OPENAI_API_KEY, OPENAI_MODEL
 from models.chat import GameSession
 from services.tts_service import get_family_voice, get_patient_voice
+
+# Regex to strip leading speaker labels like [病患], [家屬], [家屬1] from GPT output
+_LABEL_RE = re.compile(r"^\[(?:病患|家屬\d*)\]\s*")
 
 
 _client = AsyncOpenAI(api_key=OPENAI_API_KEY)
@@ -27,6 +32,14 @@ def _count_messages_since_last_interjection(session: GameSession) -> int:
     return count
 
 
+def _family_label(sender: str) -> str:
+    """Return a display label for a family sender like 'family_0' -> '[家屬1]'."""
+    if sender.startswith("family_"):
+        idx = int(sender.split("_")[1])
+        return f"[家屬{idx + 1}]"
+    return "[家屬]"
+
+
 def _build_history(messages: list) -> list[dict[str, str]]:
     """Convert ChatMessage list to OpenAI message format with speaker labels."""
     history: list[dict[str, str]] = []
@@ -34,7 +47,7 @@ def _build_history(messages: list) -> list[dict[str, str]]:
         if msg.sender == "nurse":
             history.append({"role": "user", "content": msg.content})
         else:
-            label = "[病患]" if msg.sender == "patient" else "[家屬]"
+            label = "[病患]" if msg.sender == "patient" else _family_label(msg.sender)
             history.append({"role": "assistant", "content": f"{label} {msg.content}"})
     return history
 
@@ -59,14 +72,16 @@ async def get_npc_response(
     """Get an NPC response for the nurse's message.
 
     Returns (npc_response_text, sender, audio_base64) where sender is
-    'patient' or 'family' and audio_base64 may be empty on TTS failure.
+    'patient' or 'family_0'/'family_1'/'family_2' and audio_base64 may be
+    empty on TTS failure.
     """
     if target == "patient":
         system_prompt = session.patient_system_prompt
         sender = "patient"
-    elif target == "family":
-        system_prompt = session.family_system_prompt
-        sender = "family"
+    elif target.startswith("family_") and target in ("family_0", "family_1", "family_2"):
+        family_index = int(target.split("_")[1])
+        system_prompt = session.family_system_prompts[family_index]
+        sender = target
     else:
         raise HTTPException(status_code=400, detail=f"Invalid target: {target}")
 
@@ -86,12 +101,12 @@ async def get_npc_response(
         if not content:
             raise HTTPException(status_code=502, detail="OpenAI returned empty NPC response")
 
-        npc_text = content.strip()
+        npc_text = _LABEL_RE.sub("", content.strip())
 
         # Generate TTS audio (non-blocking; falls back to empty string)
         if sender == "patient":
             audio_base64 = await get_patient_voice(npc_text)
-        else:
+        else:  # family_0 / family_1 / family_2
             audio_base64 = await get_family_voice(npc_text)
 
         return npc_text, sender, audio_base64
@@ -105,16 +120,27 @@ async def get_npc_response(
         )
 
 
-async def maybe_family_interjection(session: GameSession) -> tuple[str, bool, str]:
-    """Use LLM to decide whether the family member should interject based on conversation content.
+async def maybe_family_interjection(session: GameSession) -> tuple[str, bool, str, int]:
+    """Use LLM to decide whether a family member should interject based on conversation content.
 
-    Returns (interjection_text, did_interject, audio_base64).
-    Decisions are content-driven, not counter-based.
+    Uses round-robin to pick one candidate family member per check to avoid
+    tripling LLM costs.
+
+    Returns (interjection_text, did_interject, audio_base64, family_index).
+    family_index is -1 when no interjection occurred.
     """
     # Enforce minimum gap between interjections
     messages_since = _count_messages_since_last_interjection(session)
     if messages_since < _MIN_INTERJECTION_GAP:
-        return "", False, ""
+        return "", False, "", -1
+
+    if not session.family_system_prompts:
+        return "", False, "", -1
+
+    # Round-robin: pick the next candidate family member
+    candidate_index = (session.last_interjecting_family_index + 1) % len(session.family_system_prompts)
+    # Always advance the index so all family members get a turn
+    session.last_interjecting_family_index = candidate_index
 
     # Build recent history only (last N messages for performance)
     recent_messages = session.conversation_history[-_MAX_DECISION_HISTORY:]
@@ -133,7 +159,7 @@ async def maybe_family_interjection(session: GameSession) -> tuple[str, bool, st
     )
 
     messages: list[dict[str, str]] = [
-        {"role": "system", "content": session.family_system_prompt},
+        {"role": "system", "content": session.family_system_prompts[candidate_index]},
     ]
     messages.extend(history)
     messages.append({"role": "user", "content": decision_prompt})
@@ -149,18 +175,18 @@ async def maybe_family_interjection(session: GameSession) -> tuple[str, bool, st
 
         content = response.choices[0].message.content
         if not content:
-            return "", False, ""
+            return "", False, "", -1
 
         lines = content.strip().split("\n", 1)
         if lines[0].strip().upper() == "YES" and len(lines) > 1:
-            interjection_text = lines[1].strip()
+            interjection_text = _LABEL_RE.sub("", lines[1].strip())
             if not interjection_text:
-                return "", False, ""
+                return "", False, "", -1
             audio_base64 = await get_family_voice(interjection_text)
-            return interjection_text, True, audio_base64
+            return interjection_text, True, audio_base64, candidate_index
 
-        return "", False, ""
+        return "", False, "", -1
 
     except Exception:
         # Don't fail the main flow for an interjection error
-        return "", False, ""
+        return "", False, "", -1
