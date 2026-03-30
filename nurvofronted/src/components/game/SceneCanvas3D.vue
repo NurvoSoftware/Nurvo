@@ -1,22 +1,48 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ChatMessage } from '@/types/game'
+import type { ChatMessage, FamilyMember, FamilySender } from '@/types/game'
+import { isFamilySender, familyDisplayIndex } from '@/types/game'
 import { TresCanvas } from '@tresjs/core'
 import { Html } from '@tresjs/cientos'
 import CharacterModel from './CharacterModel.vue'
 
 const props = defineProps<{
   patientName?: string
-  familyName?: string
+  familyMembers?: FamilyMember[]
   latestMessage?: ChatMessage | null
 }>()
 
 const emit = defineEmits<{
-  (e: 'select-target', target: 'patient' | 'family'): void
+  (e: 'select-target', target: 'patient' | FamilySender): void
 }>()
 
+const familyPositions: [number, number, number][] = [
+  [1.8, 0, -0.2],
+  [2.5, 0, 0.5],
+  [3.2, 0, -0.8],
+]
+
+const familyRotations: [number, number, number][] = [
+  [0, -0.3, 0],
+  [0, -0.5, 0],
+  [0, -0.2, 0],
+]
+
+const familyColorSets = [
+  { head: '#fbbf24', body: '#fde68a', arms: '#fde68a', legs: '#64748b', accent: '#fde68a' },
+  { head: '#fbbf24', body: '#c4b5fd', arms: '#c4b5fd', legs: '#64748b', accent: '#c4b5fd' },
+  { head: '#fbbf24', body: '#6ee7b7', arms: '#6ee7b7', legs: '#64748b', accent: '#6ee7b7' },
+]
+
 const showPatientBubble = computed(() => props.latestMessage?.sender === 'patient')
-const showFamilyBubble = computed(() => props.latestMessage?.sender === 'family')
+
+const activeFamilyBubbleIndex = computed<number>(() => {
+  if (!props.latestMessage) return -1
+  const sender = props.latestMessage.sender
+  if (isFamilySender(sender)) return familyDisplayIndex(sender)
+  return -1
+})
+
 const truncatedContent = computed(() => {
   if (!props.latestMessage) return ''
   const content = props.latestMessage.content
@@ -26,9 +52,10 @@ const truncatedContent = computed(() => {
 const patientAnimState = computed(() =>
   props.latestMessage?.sender === 'patient' ? 'speaking' : 'idle'
 )
-const familyAnimState = computed(() =>
-  props.latestMessage?.sender === 'family' ? 'speaking' : 'idle'
-)
+
+function familyAnimState(index: number): string {
+  return props.latestMessage?.sender === `family_${index}` ? 'speaking' : 'idle'
+}
 </script>
 
 <template>
@@ -107,16 +134,18 @@ const familyAnimState = computed(() =>
         @click="emit('select-target', 'patient')"
       />
 
-      <!-- Family Character -->
+      <!-- Family Characters -->
       <CharacterModel
+        v-for="(fm, idx) in (familyMembers ?? [])"
+        :key="`family-${idx}`"
         type="family"
-        :position="[2, 0, -0.5]"
-        :rotation="[0, -0.3, 0]"
-        :colors="{ head: '#fbbf24', body: '#fde68a', arms: '#fde68a', legs: '#64748b', accent: '#fde68a' }"
-        :animation-state="familyAnimState"
-        :label="familyName || '家屬'"
+        :position="familyPositions[idx]"
+        :rotation="familyRotations[idx]"
+        :colors="familyColorSets[idx]"
+        :animation-state="familyAnimState(idx)"
+        :label="fm.name || `家屬${idx + 1}`"
         :is-clickable="true"
-        @click="emit('select-target', 'family')"
+        @click="emit('select-target', `family_${idx}` as FamilySender)"
       />
 
       <!-- Nurse Character -->
@@ -139,7 +168,10 @@ const familyAnimState = computed(() =>
         </Html>
       </TresGroup>
 
-      <TresGroup v-if="showFamilyBubble" :position="[2, 2.5, -0.5]">
+      <TresGroup
+        v-if="activeFamilyBubbleIndex >= 0"
+        :position="[familyPositions[activeFamilyBubbleIndex][0], 2.5, familyPositions[activeFamilyBubbleIndex][2]]"
+      >
         <Html center :distance-factor="8">
           <div class="speech-bubble speech-bubble--family">
             <p>{{ truncatedContent }}</p>

@@ -1,5 +1,5 @@
 import { useChatStore } from '@/stores/chatStore'
-import type { WsServerMessage, WsNurseMessage, ChatMessage } from '@/types/game'
+import type { WsServerMessage, WsNurseMessage, ChatMessage, FamilySender } from '@/types/game'
 
 let ws: WebSocket | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -115,7 +115,7 @@ export function connect(sessionId: string) {
   }
 }
 
-export function sendMessage(target: 'patient' | 'family', content: string) {
+export function sendMessage(target: 'patient' | FamilySender, content: string) {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     console.error('[wsService] WebSocket 尚未連線')
     return

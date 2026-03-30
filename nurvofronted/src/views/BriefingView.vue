@@ -5,6 +5,7 @@ import { useScenarioStore } from '@/stores/scenarioStore'
 import { useGameStore } from '@/stores/gameStore'
 import NavBar from '@/components/shared/NavBar.vue'
 import PatientCard from '@/components/game/PatientCard.vue'
+import { unlock as unlockAudio } from '@/services/audioService'
 
 const router = useRouter()
 const scenarioStore = useScenarioStore()
@@ -27,6 +28,7 @@ onMounted(() => {
 })
 
 function enterScene(): void {
+  unlockAudio()
   gameStore.setStatus('playing')
   router.push('/scene')
 }
@@ -49,24 +51,29 @@ function enterScene(): void {
         :pain-severity="painSeverity"
       />
 
-      <!-- Two-column row: family + goals -->
-      <div class="two-col-row">
-        <!-- Family info card -->
-        <div class="info-card family-card">
+      <!-- Family members row -->
+      <div class="family-row">
+        <div
+          v-for="(fm, idx) in scenarioStore.scenario.family_members"
+          :key="idx"
+          class="info-card family-card"
+        >
           <div class="info-card-header">
             <div class="family-avatar">&#x1F464;</div>
             <div class="family-name-block">
-              <span class="family-name">{{ scenarioStore.scenario.family_member.name }}</span>
-              <span class="family-rel">{{ scenarioStore.scenario.family_member.relationship }}</span>
+              <span class="family-name">{{ fm.name }}</span>
+              <span class="family-rel">{{ fm.relationship }}</span>
             </div>
           </div>
           <div class="family-tags">
-            <span class="ftag">{{ scenarioStore.scenario.family_member.personality }}</span>
-            <span class="ftag">{{ scenarioStore.scenario.family_member.emotional_state }}</span>
+            <span class="ftag">{{ fm.personality }}</span>
+            <span class="ftag">{{ fm.emotional_state }}</span>
           </div>
         </div>
+      </div>
 
-        <!-- Communication goals card -->
+      <!-- Communication goals card -->
+      <div class="two-col-row">
         <div class="info-card goals-card">
           <div class="goals-title">&#x1F3AF; 溝通挑戰</div>
           <ul class="goals-list">
@@ -124,6 +131,12 @@ function enterScene(): void {
   font-size: var(--nurvo-font-size-md);
   color: var(--nurvo-text-secondary);
   margin: 0;
+}
+
+/* ---- Family members row ---- */
+.family-row {
+  display: flex;
+  gap: 14px;
 }
 
 /* ---- Two-column row ---- */
@@ -290,6 +303,10 @@ function enterScene(): void {
 
 /* ---- Responsive ---- */
 @media (max-width: 540px) {
+  .family-row {
+    flex-direction: column;
+  }
+
   .two-col-row {
     flex-direction: column;
   }
