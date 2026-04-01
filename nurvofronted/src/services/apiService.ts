@@ -219,6 +219,30 @@ export async function submitRecord(
   })
 }
 
+export async function transcribeAudio(audioBlob: Blob): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', audioBlob, 'audio.webm')
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 30000)
+
+  const response = await fetch(`${API_BASE}/stt/transcribe`, {
+    method: 'POST',
+    body: formData,
+    signal: controller.signal,
+  })
+
+  clearTimeout(timeoutId)
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null)
+    throw new Error(errorBody?.detail || '語音辨識失敗')
+  }
+
+  const data = await response.json()
+  return data.text || ''
+}
+
 export async function evaluateScore(sessionId: string): Promise<ScoreResult> {
   if (USE_MOCK_API) {
     return createMockScoreResult(sessionId)

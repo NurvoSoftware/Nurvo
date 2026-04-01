@@ -15,6 +15,7 @@ const gameStore = useGameStore()
 const inputText = ref<string>('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const isRecording = ref<boolean>(false)
+const isTranscribing = ref<boolean>(false)
 const speechSupported: boolean = speechService.isSupported()
 
 const filteredMessages = computed(() => {
@@ -71,15 +72,22 @@ function scrollToBottom(): void {
   }
 }
 
-function toggleRecording(): void {
+async function toggleRecording(): Promise<void> {
   if (isRecording.value) {
     speechService.stop()
     isRecording.value = false
+    isTranscribing.value = true
   } else {
-    speechService.start((text: string) => {
-      inputText.value += text
-      isRecording.value = false
-    })
+    isTranscribing.value = false
+    await speechService.start(
+      (text: string) => {
+        inputText.value += text
+        isTranscribing.value = false
+      },
+      (_error: string) => {
+        isTranscribing.value = false
+      },
+    )
     isRecording.value = true
   }
 }
@@ -158,12 +166,13 @@ watch(
         <button
           v-if="speechSupported"
           class="input-btn input-btn--mic"
-          :class="{ 'input-btn--recording': isRecording }"
-          :disabled="disabled"
-          :title="isRecording ? '停止錄音' : '語音輸入'"
+          :class="{ 'input-btn--recording': isRecording, 'input-btn--transcribing': isTranscribing }"
+          :disabled="disabled || isTranscribing"
+          :title="isTranscribing ? '辨識中...' : isRecording ? '停止錄音' : '語音輸入'"
           @click="toggleRecording"
         >
-          &#x1F3A4;
+          <span v-if="isTranscribing" class="transcribing-spinner"></span>
+          <span v-else>&#x1F3A4;</span>
         </button>
         <button
           class="input-btn input-btn--send"
@@ -396,6 +405,26 @@ watch(
 .input-btn--recording {
   background: var(--nurvo-danger-light);
   border-color: var(--nurvo-danger-border);
+}
+
+.input-btn--transcribing {
+  background: var(--nurvo-surface);
+  border-color: var(--nurvo-primary-border);
+  opacity: 0.7;
+}
+
+.transcribing-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--nurvo-border);
+  border-top-color: var(--nurvo-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .input-btn--send {

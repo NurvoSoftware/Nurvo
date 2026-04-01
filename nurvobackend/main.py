@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import scenario, chat, record, score
+from routers import scenario, chat, record, score, stt
 
 app = FastAPI(
     title="Nurvo API",
@@ -23,6 +23,7 @@ app.include_router(scenario.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(record.router, prefix="/api")
 app.include_router(score.router, prefix="/api")
+app.include_router(stt.router, prefix="/api")
 
 
 @app.get("/api/health")
