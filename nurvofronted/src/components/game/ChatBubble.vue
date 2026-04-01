@@ -1,22 +1,32 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ChatMessage } from '@/types/game'
+import { isFamilySender, familyDisplayIndex } from '@/types/game'
 import { decodeAndPlay } from '@/services/audioService'
+import { useScenarioStore } from '@/stores/scenarioStore'
 
 const props = defineProps<{
   message: ChatMessage
 }>()
 
+const scenarioStore = useScenarioStore()
+
 const isNurse = computed(() => props.message.sender === 'nurse')
 const hasAudio = computed(() => !!props.message.audio_base64)
 
 const senderLabel = computed(() => {
-  switch (props.message.sender) {
-    case 'nurse': return '你'
-    case 'patient': return '病患'
-    case 'family': return '家屬'
-    default: return ''
+  if (props.message.sender === 'nurse') return '你'
+  if (props.message.sender === 'patient') return '病患'
+  if (isFamilySender(props.message.sender)) {
+    const idx = familyDisplayIndex(props.message.sender)
+    return scenarioStore.scenario?.family_members[idx]?.name ?? `家屬${idx + 1}`
   }
+  return ''
+})
+
+const senderClass = computed(() => {
+  if (isFamilySender(props.message.sender)) return 'family'
+  return props.message.sender
 })
 
 const formattedTime = computed(() => {
@@ -38,7 +48,7 @@ function replayAudio() {
     <!-- Avatar -->
     <div
       class="bubble-avatar"
-      :class="`bubble-avatar--${message.sender}`"
+      :class="`bubble-avatar--${senderClass}`"
     >
       <template v-if="isNurse">N</template>
       <template v-else-if="message.sender === 'patient'">&#x1F9D3;</template>
@@ -48,15 +58,15 @@ function replayAudio() {
     <!-- Content -->
     <div class="bubble-body" :class="{ 'bubble-body--nurse': isNurse }">
       <div class="bubble-meta">
-        <span class="bubble-sender" :class="`bubble-sender--${message.sender}`">
+        <span class="bubble-sender" :class="`bubble-sender--${senderClass}`">
           {{ senderLabel }}
         </span>
-        <span v-if="message.is_interjection && message.sender === 'family'" class="bubble-interjection">
+        <span v-if="message.is_interjection && isFamilySender(message.sender)" class="bubble-interjection">
           插話
         </span>
         <span class="bubble-time">{{ formattedTime }}</span>
       </div>
-      <div class="bubble-content" :class="`bubble-content--${message.sender}`">
+      <div class="bubble-content" :class="`bubble-content--${senderClass}`">
         {{ message.content }}
       </div>
       <button v-if="hasAudio" class="bubble-audio" @click="replayAudio">

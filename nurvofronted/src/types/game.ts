@@ -38,16 +38,26 @@ export interface Scenario {
   id: string
   patient_profile: PatientProfile
   pain_details: PainDetails
-  family_member: FamilyMember
+  family_members: FamilyMember[]
   communication_challenges: string[]
   correct_answers: CorrectAnswers
   time_limit_seconds: number
   created_at: string
 }
 
+export type FamilySender = 'family_0' | 'family_1' | 'family_2'
+
+export function isFamilySender(s: string): s is FamilySender {
+  return s === 'family_0' || s === 'family_1' || s === 'family_2'
+}
+
+export function familyDisplayIndex(s: FamilySender): number {
+  return parseInt(s.split('_')[1])
+}
+
 export interface ChatMessage {
   id: string
-  sender: 'patient' | 'family' | 'nurse'
+  sender: 'patient' | FamilySender | 'nurse'
   content: string
   timestamp: string
   elapsed_seconds: number
@@ -91,8 +101,7 @@ export interface GameSession {
   session_id: string
   scenario: Scenario
   conversation_history: ChatMessage[]
-  current_target: 'patient' | 'family'
-  family_interjection_counter: number
+  current_target: 'patient' | FamilySender
   start_time: string
   status: 'briefing' | 'playing' | 'recording' | 'scoring' | 'completed'
 }
@@ -116,7 +125,7 @@ export interface ScenarioGenerateResponse {
 
 export interface WsNpcMessage {
   type: 'npc_message'
-  sender: 'patient' | 'family'
+  sender: 'patient' | FamilySender
   content: string
   audio_base64?: string
   message_id: string
@@ -126,7 +135,7 @@ export interface WsNpcMessage {
 
 export interface WsTypingMessage {
   type: 'typing'
-  sender: 'patient' | 'family'
+  sender: 'patient' | FamilySender
 }
 
 export interface WsTimerMessage {
@@ -154,6 +163,6 @@ export type WsServerMessage =
 
 export interface WsNurseMessage {
   type: 'nurse_message'
-  target: 'patient' | 'family'
+  target: 'patient' | FamilySender
   content: string
 }

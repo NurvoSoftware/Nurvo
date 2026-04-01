@@ -16,7 +16,7 @@ class SessionStatus(str, Enum):
 
 class ChatMessage(BaseModel):
     id: str
-    sender: str  # "patient" | "family" | "nurse"
+    sender: str  # "patient" | "family_0" | "family_1" | "family_2" | "nurse"
     content: str
     timestamp: datetime
     elapsed_seconds: float
@@ -28,8 +28,8 @@ class GameSession(BaseModel):
     scenario_data: dict  # Raw scenario dict for flexibility
     conversation_history: list[ChatMessage] = []
     current_target: str = "patient"
-    family_interjection_counter: int = 0
     start_time: datetime | None = None
     status: SessionStatus = SessionStatus.BRIEFING
     patient_system_prompt: str = ""
-    family_system_prompt: str = ""
+    family_system_prompts: list[str] = []
+    last_interjecting_family_index: int = -1

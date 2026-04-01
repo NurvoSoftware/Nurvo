@@ -11,7 +11,7 @@ import ChatPanel from '@/components/game/ChatPanel.vue'
 import PatientCard from '@/components/game/PatientCard.vue'
 import TimerBar from '@/components/game/TimerBar.vue'
 import Dialog from 'primevue/dialog'
-import type { ChatMessage } from '@/types/game'
+import type { ChatMessage, FamilySender } from '@/types/game'
 
 const router = useRouter()
 const scenarioStore = useScenarioStore()
@@ -33,7 +33,7 @@ const latestNpcMessage = computed<ChatMessage | null>(() => {
   return lastMessage ?? null
 })
 
-function handleSelectTarget(target: 'patient' | 'family'): void {
+function handleSelectTarget(target: 'patient' | FamilySender): void {
   chatStore.setTarget(target)
 }
 
@@ -138,7 +138,7 @@ onBeforeUnmount(() => {
         -->
         <SceneFallback2D
           :patient-name="scenarioStore.scenario.patient_profile.name"
-          :family-name="scenarioStore.scenario.family_member.name"
+          :family-members="scenarioStore.scenario.family_members"
           :latest-message="latestNpcMessage"
           @select-target="handleSelectTarget"
         />
@@ -163,7 +163,6 @@ onBeforeUnmount(() => {
         :pain-severity="scenarioStore.scenario.pain_details.severity"
       />
     </Dialog>
-
   </div>
 </template>
 

@@ -1,5 +1,6 @@
 import { useChatStore } from '@/stores/chatStore'
-import type { WsServerMessage, WsNurseMessage, ChatMessage } from '@/types/game'
+import type { WsServerMessage, WsNurseMessage, ChatMessage, FamilySender } from '@/types/game'
+import { isFamilySender } from '@/types/game'
 
 let ws: WebSocket | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -18,7 +19,7 @@ function randomId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`
 }
 
-function createMockReply(target: 'patient' | 'family', nurseContent: string): string {
+function createMockReply(target: 'patient' | FamilySender, nurseContent: string): string {
   if (target === 'patient') {
     return `我了解，關於「${nurseContent.slice(0, 12)}」我想補充：現在主要是傷口附近刺痛，翻身時更明顯。`
   }
@@ -136,7 +137,7 @@ export function connect(sessionId: string) {
   }
 }
 
-export function sendMessage(target: 'patient' | 'family', content: string) {
+export function sendMessage(target: 'patient' | FamilySender, content: string) {
   if (USE_MOCK_API) {
     const chatStore = useChatStore()
     chatStore.setTyping(target)
@@ -149,7 +150,7 @@ export function sendMessage(target: 'patient' | 'family', content: string) {
         content: createMockReply(target, content),
         timestamp: new Date().toISOString(),
         elapsed_seconds: 0,
-        is_interjection: target === 'family' && Math.random() > 0.6,
+        is_interjection: isFamilySender(target) && Math.random() > 0.6,
       }
       chatStore.setTyping(null)
       chatStore.addMessage(message)
@@ -157,7 +158,6 @@ export function sendMessage(target: 'patient' | 'family', content: string) {
 
     return
   }
-
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     console.error('[wsService] WebSocket 尚未連線')
     return

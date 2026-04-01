@@ -24,13 +24,29 @@ SCENARIO_GENERATION_PROMPT = """你是一個護理教育情境生成器。請生
     "relieving_factors": ["緩解因素"],
     "associated_symptoms": ["伴隨症狀"]
   },
-  "family_member": {
-    "name": "家屬姓名",
-    "relationship": "與病患關係",
-    "personality": "性格類型（如焦慮型、質疑型、沉默型）",
-    "emotional_state": "當前情緒狀態描述",
-    "interjection_triggers": ["會觸發插話的話題或情況"]
-  },
+  "family_members": [
+    {
+      "name": "家屬1姓名",
+      "relationship": "與病患關係",
+      "personality": "性格類型（如焦慮型、質疑型、沉默型）",
+      "emotional_state": "當前情緒狀態描述",
+      "interjection_triggers": ["會觸發插話的話題或情況"]
+    },
+    {
+      "name": "家屬2姓名",
+      "relationship": "與病患關係（不同於家屬1）",
+      "personality": "性格類型（不同於家屬1）",
+      "emotional_state": "當前情緒狀態描述",
+      "interjection_triggers": ["會觸發插話的話題或情況"]
+    },
+    {
+      "name": "家屬3姓名",
+      "relationship": "與病患關係（不同於家屬1和2）",
+      "personality": "性格類型（不同於家屬1和2）",
+      "emotional_state": "當前情緒狀態描述",
+      "interjection_triggers": ["會觸發插話的話題或情況"]
+    }
+  ],
   "communication_challenges": ["這個情境中護理師可能遇到的溝通挑戰"],
   "correct_answers": {
     "expected_info_gathered": ["護理師應該收集到的資訊"],
@@ -43,7 +59,7 @@ SCENARIO_GENERATION_PROMPT = """你是一個護理教育情境生成器。請生
 要求：
 1. 每次生成的情境必須獨特，包括不同的疼痛原因、位置和程度
 2. 病患的疼痛描述要模糊且不具體，需要護理師透過引導來釐清
-3. 家屬的性格要有明確特徵，且會影響溝通過程
+3. 必須生成 3 位家屬，每位的姓名、與病患關係、性格類型各不相同，且會影響溝通過程
 4. 所有文字使用繁體中文
 5. 情境要符合真實臨床場景
 6. 只回傳 JSON，不要有其他文字"""

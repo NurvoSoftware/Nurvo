@@ -3,14 +3,20 @@ import { ref, watch, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useChatStore } from '@/stores/chatStore'
 import { useGameStore } from '@/stores/gameStore'
+import { useScenarioStore } from '@/stores/scenarioStore'
 import { sendMessage } from '@/services/wsService'
-import { decodeAndPlay } from '@/services/audioService'
+import { decodeAndPlay, unlock as unlockAudio } from '@/services/audioService'
 import * as speechService from '@/services/speechService'
+import { isFamilySender, familyDisplayIndex } from '@/types/game'
+import type { FamilySender } from '@/types/game'
 import ChatBubble from './ChatBubble.vue'
 
 const router = useRouter()
 const chatStore = useChatStore()
 const gameStore = useGameStore()
+const scenarioStore = useScenarioStore()
+
+const familyMembers = computed(() => scenarioStore.scenario?.family_members ?? [])
 
 const inputText = ref<string>('')
 const messagesContainer = ref<HTMLElement | null>(null)
@@ -24,11 +30,23 @@ const filteredMessages = computed(() => {
 
 const typingLabel = computed<string>(() => {
   if (!chatStore.typingIndicator) return ''
-  return chatStore.typingIndicator === 'patient' ? '病患正在輸入...' : '家屬正在輸入...'
+  if (chatStore.typingIndicator === 'patient') return '病患正在輸入...'
+  if (isFamilySender(chatStore.typingIndicator)) {
+    const idx = familyDisplayIndex(chatStore.typingIndicator)
+    const name = familyMembers.value[idx]?.name ?? `家屬${idx + 1}`
+    return `${name}正在輸入...`
+  }
+  return ''
 })
 
 const placeholder = computed<string>(() => {
-  return '輸入訊息給' + (chatStore.currentTarget === 'patient' ? '病患' : '家屬') + '...'
+  if (chatStore.currentTarget === 'patient') return '輸入訊息給病患...'
+  if (isFamilySender(chatStore.currentTarget)) {
+    const idx = familyDisplayIndex(chatStore.currentTarget)
+    const name = familyMembers.value[idx]?.name ?? `家屬${idx + 1}`
+    return `輸入訊息給${name}...`
+  }
+  return '輸入訊息...'
 })
 
 const disabled = computed<boolean>(() => {
@@ -40,6 +58,7 @@ const canSend = computed<boolean>(() => {
 })
 
 function handleSend(): void {
+  unlockAudio()
   const content = inputText.value.trim()
   if (!content) return
 
@@ -57,7 +76,7 @@ function handleSend(): void {
   inputText.value = ''
 }
 
-function switchTarget(target: 'patient' | 'family'): void {
+function switchTarget(target: 'patient' | FamilySender): void {
   chatStore.setTarget(target)
 }
 
@@ -119,18 +138,20 @@ watch(
         &#x1F9D3; 病患
       </button>
       <button
+        v-for="(fm, idx) in familyMembers"
+        :key="idx"
         class="tab-btn"
-        :class="{ 'tab-btn--active': chatStore.currentTarget === 'family' }"
-        @click="switchTarget('family')"
+        :class="{ 'tab-btn--active': chatStore.currentTarget === `family_${idx}` }"
+        @click="switchTarget(`family_${idx}` as FamilySender)"
       >
-        &#x1F469; 家屬
+        &#x1F469; {{ fm.name }}
       </button>
     </div>
 
     <!-- Messages area -->
     <div ref="messagesContainer" class="messages-area">
       <div v-if="filteredMessages.length === 0" class="empty-state">
-        <p>開始與{{ chatStore.currentTarget === 'patient' ? '病患' : '家屬' }}對話</p>
+        <p>開始與{{ chatStore.currentTarget === 'patient' ? '病患' : placeholder.replace('輸入訊息給', '').replace('...', '') }}對話</p>
         <p class="empty-hint">輸入訊息開始溝通評估</p>
       </div>
 
@@ -144,6 +165,7 @@ watch(
         >
           {{ chatStore.typingIndicator === 'patient' ? '&#x1F9D3;' : '&#x1F469;' }}
         </div>
+        <span class="typing-label">{{ typingLabel }}</span>
         <div class="typing-bubble">
           <span class="typing-dots">
             <span></span><span></span><span></span>

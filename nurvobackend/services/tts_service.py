@@ -1,6 +1,7 @@
 """Text-to-Speech service using Eleven Labs API."""
 
 import base64
+import logging
 
 import httpx
 
@@ -9,6 +10,8 @@ from config import (
     ELEVENLABS_FAMILY_VOICE_ID,
     ELEVENLABS_PATIENT_VOICE_ID,
 )
+
+logger = logging.getLogger(__name__)
 
 _TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 _TIMEOUT = 15.0
@@ -20,6 +23,7 @@ async def synthesize_speech(text: str, voice_id: str) -> str:
     Returns base64-encoded audio on success, empty string on failure.
     """
     if not ELEVENLABS_API_KEY or not voice_id:
+        logger.warning("TTS skipped: ELEVENLABS_API_KEY or voice_id is empty")
         return ""
 
     url = _TTS_URL.format(voice_id=voice_id)
@@ -38,8 +42,11 @@ async def synthesize_speech(text: str, voice_id: str) -> str:
             response.raise_for_status()
             audio_bytes = response.content
             return base64.b64encode(audio_bytes).decode("utf-8")
-    except Exception:
-        # Fallback to text-only on any failure
+    except httpx.HTTPStatusError as exc:
+        logger.error("TTS API error %s: %s", exc.response.status_code, exc.response.text[:200])
+        return ""
+    except Exception as exc:
+        logger.error("TTS failed: %s", exc)
         return ""
 
 
