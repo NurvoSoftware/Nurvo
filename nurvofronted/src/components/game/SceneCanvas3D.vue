@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { ChatMessage, FamilyMember, FamilySender } from '@/types/game'
 import { isFamilySender, familyDisplayIndex } from '@/types/game'
+import type { CharacterColors } from './CharacterModel.vue'
 import { TresCanvas } from '@tresjs/core'
 import { Html } from '@tresjs/cientos'
 import CharacterModel from './CharacterModel.vue'
@@ -32,7 +33,7 @@ const familyColorSets = [
   { head: '#fbbf24', body: '#fde68a', arms: '#fde68a', legs: '#64748b', accent: '#fde68a' },
   { head: '#fbbf24', body: '#c4b5fd', arms: '#c4b5fd', legs: '#64748b', accent: '#c4b5fd' },
   { head: '#fbbf24', body: '#6ee7b7', arms: '#6ee7b7', legs: '#64748b', accent: '#6ee7b7' },
-]
+] as const satisfies CharacterColors[]
 
 const showPatientBubble = computed(() => props.latestMessage?.sender === 'patient')
 
@@ -53,9 +54,17 @@ const patientAnimState = computed(() =>
   props.latestMessage?.sender === 'patient' ? 'speaking' : 'idle'
 )
 
-function familyAnimState(index: number): string {
+function familyAnimState(index: number): 'idle' | 'speaking' {
   return props.latestMessage?.sender === `family_${index}` ? 'speaking' : 'idle'
 }
+
+const activeFamilyBubblePosition = computed<[number, number, number]>(() => {
+  const idx = activeFamilyBubbleIndex.value
+  if (idx < 0 || idx >= familyPositions.length) return [0, 2.5, 0]
+  const position = familyPositions[idx]
+  if (!position) return [0, 2.5, 0]
+  return [position[0], 2.5, position[2]]
+})
 </script>
 
 <template>
@@ -139,9 +148,9 @@ function familyAnimState(index: number): string {
         v-for="(fm, idx) in (familyMembers ?? [])"
         :key="`family-${idx}`"
         type="family"
-        :position="familyPositions[idx]"
-        :rotation="familyRotations[idx]"
-        :colors="familyColorSets[idx]"
+        :position="familyPositions[idx] ?? familyPositions[0]"
+        :rotation="familyRotations[idx] ?? familyRotations[0]"
+        :colors="familyColorSets[idx] ?? familyColorSets[0]"
         :animation-state="familyAnimState(idx)"
         :label="fm.name || `家屬${idx + 1}`"
         :is-clickable="true"
@@ -170,7 +179,7 @@ function familyAnimState(index: number): string {
 
       <TresGroup
         v-if="activeFamilyBubbleIndex >= 0"
-        :position="[familyPositions[activeFamilyBubbleIndex][0], 2.5, familyPositions[activeFamilyBubbleIndex][2]]"
+        :position="activeFamilyBubblePosition"
       >
         <Html center :distance-factor="8">
           <div class="speech-bubble speech-bubble--family">

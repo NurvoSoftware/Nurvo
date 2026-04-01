@@ -52,7 +52,9 @@ export function isFamilySender(s: string): s is FamilySender {
 }
 
 export function familyDisplayIndex(s: FamilySender): number {
-  return parseInt(s.split('_')[1])
+  const raw = s.split('_')[1]
+  const parsed = Number.parseInt(raw ?? '0', 10)
+  return Number.isNaN(parsed) ? 0 : parsed
 }
 
 export interface ChatMessage {

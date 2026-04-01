@@ -13,7 +13,12 @@ let isListening = false
  * Check if the browser supports MediaRecorder (required for recording).
  */
 export function isSupported(): boolean {
-  return !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder)
+  return (
+    typeof navigator !== 'undefined' &&
+    typeof window !== 'undefined' &&
+    !!navigator.mediaDevices?.getUserMedia &&
+    'MediaRecorder' in window
+  )
 }
 
 /**

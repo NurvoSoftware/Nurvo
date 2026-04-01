@@ -53,13 +53,15 @@ function createMockScenarioResponse(difficulty: ScenarioDifficulty = 'medium'): 
         relieving_factors: ['平躺休息'],
         associated_symptoms: ['焦慮', '冒冷汗'],
       },
-      family_member: {
-        name: '王太太',
-        relationship: '配偶',
-        personality: '焦慮、保護性高',
-        emotional_state: '擔心手術後恢復狀況',
-        interjection_triggers: ['疼痛惡化', '等待過久', '資訊不清楚'],
-      },
+      family_members: [
+        {
+          name: '王太太',
+          relationship: '配偶',
+          personality: '焦慮、保護性高',
+          emotional_state: '擔心手術後恢復狀況',
+          interjection_triggers: ['疼痛惡化', '等待過久', '資訊不清楚'],
+        },
+      ],
       communication_challenges: challengeMap[difficulty],
       correct_answers: {
         expected_info_gathered: ['疼痛位置', '疼痛程度', '疼痛誘發因子', '緩解方式'],
