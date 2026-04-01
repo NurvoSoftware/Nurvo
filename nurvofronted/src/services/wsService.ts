@@ -42,8 +42,11 @@ export function onTimerExpired(cb: () => void): void {
 
 function getWsUrl(sessionId: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const host = window.location.hostname
-  return `${protocol}//${host}:8000/api/chat/${sessionId}`
+  if (import.meta.env.DEV) {
+    const host = window.location.hostname
+    return `${protocol}//${host}:8000/api/chat/${sessionId}`
+  }
+  return `${protocol}//${window.location.host}/api/chat/${sessionId}`
 }
 
 function handleMessage(event: MessageEvent) {

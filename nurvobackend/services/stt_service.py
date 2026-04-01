@@ -36,6 +36,10 @@ async def transcribe_audio(audio_bytes: bytes, filename: str = "audio.webm") -> 
             response.raise_for_status()
             result = response.json()
             return result.get("text", "")
+    except httpx.HTTPStatusError as e:
+        error_detail = e.response.text
+        print(f"[stt_service] API error: {e.response.status_code} - {error_detail}", flush=True)
+        raise ValueError(f"STT API 錯誤: {error_detail}")
     except Exception as e:
-        print(f"[stt_service] Transcription failed: {e}")
-        return ""
+        print(f"[stt_service] Transcription failed: {e}", flush=True)
+        raise ValueError(f"STT 系統錯誤: {str(e)}")

@@ -7,7 +7,9 @@ import httpx
 
 from config import (
     ELEVENLABS_API_KEY,
-    ELEVENLABS_FAMILY_VOICE_ID,
+    ELEVENLABS_FAMILY_VOICE_ID_0,
+    ELEVENLABS_FAMILY_VOICE_ID_1,
+    ELEVENLABS_FAMILY_VOICE_ID_2,
     ELEVENLABS_PATIENT_VOICE_ID,
 )
 
@@ -55,6 +57,12 @@ async def get_patient_voice(text: str) -> str:
     return await synthesize_speech(text, ELEVENLABS_PATIENT_VOICE_ID)
 
 
-async def get_family_voice(text: str) -> str:
+async def get_family_voice(text: str, family_index: int = 0) -> str:
     """Get TTS audio for family member voice."""
-    return await synthesize_speech(text, ELEVENLABS_FAMILY_VOICE_ID)
+    voices = [
+        ELEVENLABS_FAMILY_VOICE_ID_0,
+        ELEVENLABS_FAMILY_VOICE_ID_1,
+        ELEVENLABS_FAMILY_VOICE_ID_2,
+    ]
+    voice_id = voices[family_index] if 0 <= family_index < len(voices) else voices[0]
+    return await synthesize_speech(text, voice_id)

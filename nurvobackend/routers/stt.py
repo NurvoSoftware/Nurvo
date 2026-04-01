@@ -15,9 +15,9 @@ async def stt_transcribe(file: UploadFile = File(...)) -> dict:
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Empty audio file")
 
-    text = await transcribe_audio(audio_bytes, filename=file.filename or "audio.webm")
-
-    if not text:
-        raise HTTPException(status_code=502, detail="語音辨識失敗，請再試一次")
+    try:
+        text = await transcribe_audio(audio_bytes, filename=file.filename or "audio.webm")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     return {"text": text}

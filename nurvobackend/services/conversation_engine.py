@@ -107,7 +107,8 @@ async def get_npc_response(
         if sender == "patient":
             audio_base64 = await get_patient_voice(npc_text)
         else:  # family_0 / family_1 / family_2
-            audio_base64 = await get_family_voice(npc_text)
+            f_idx = int(sender.split("_")[1])
+            audio_base64 = await get_family_voice(npc_text, f_idx)
 
         return npc_text, sender, audio_base64
 
