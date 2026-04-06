@@ -11,7 +11,18 @@ import ChatPanel from '@/components/game/ChatPanel.vue'
 import PatientCard from '@/components/game/PatientCard.vue'
 import TimerBar from '@/components/game/TimerBar.vue'
 import Dialog from 'primevue/dialog'
-import type { ChatMessage } from '@/types/game'
+import type { ChatMessage, Scenario } from '@/types/game'
+
+interface TopBubbleItem {
+  id: string
+  label: string
+  target: 'patient' | 'family'
+  variant?: 'patient' | 'family'
+}
+
+interface ScenarioWithDynamicFamilies extends Scenario {
+  family_members?: Array<{ name: string }>
+}
 
 const router = useRouter()
 const scenarioStore = useScenarioStore()
@@ -31,6 +42,40 @@ const latestNpcMessage = computed<ChatMessage | null>(() => {
   const npcMessages = chatStore.messages.filter((m: ChatMessage) => m.sender !== 'nurse')
   const lastMessage = npcMessages[npcMessages.length - 1]
   return lastMessage ?? null
+})
+
+const topBubbles = computed<TopBubbleItem[]>(() => {
+  const scenario = scenarioStore.scenario as ScenarioWithDynamicFamilies | null
+  if (!scenario) return []
+
+  const bubbles: TopBubbleItem[] = [
+    {
+      id: 'patient-1',
+      label: scenario.patient_profile.name || '病患',
+      target: 'patient',
+      variant: 'patient',
+    },
+  ]
+
+  if (Array.isArray(scenario.family_members) && scenario.family_members.length > 0) {
+    scenario.family_members.slice(0, 3).forEach((member, index) => {
+      bubbles.push({
+        id: `family-${index + 1}`,
+        label: member.name || `家屬${index + 1}`,
+        target: 'family',
+        variant: 'family',
+      })
+    })
+  } else if (scenario.family_member?.name) {
+    bubbles.push({
+      id: 'family-1',
+      label: scenario.family_member.name,
+      target: 'family',
+      variant: 'family',
+    })
+  }
+
+  return bubbles.slice(0, 4)
 })
 
 function handleSelectTarget(target: 'patient' | 'family'): void {
@@ -139,6 +184,7 @@ onBeforeUnmount(() => {
         <SceneFallback2D
           :patient-name="scenarioStore.scenario.patient_profile.name"
           :family-name="scenarioStore.scenario.family_member.name"
+          :top-bubbles="topBubbles"
           :latest-message="latestNpcMessage"
           @select-target="handleSelectTarget"
         />
