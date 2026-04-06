@@ -19,6 +19,64 @@ const painSeverity = computed<number | undefined>(() => {
   return scenarioStore.scenario?.pain_details?.severity
 })
 
+type FamilyCardDisplay = {
+  name: string
+  relationship: string
+  personality: string
+  emotional_state: string
+  interjection_triggers: string[]
+}
+
+const familyMembers = computed<FamilyCardDisplay[]>(() => {
+  if (!scenarioStore.scenario) return []
+
+  const scenarioWithList = scenarioStore.scenario as typeof scenarioStore.scenario & {
+    family_members?: FamilyCardDisplay[]
+    family_member_1?: FamilyCardDisplay
+    family_member_2?: FamilyCardDisplay
+    family_member_3?: FamilyCardDisplay
+  }
+
+  const normalizeMember = (member?: Partial<FamilyCardDisplay>): FamilyCardDisplay => ({
+    name: member?.name ?? '未知家屬',
+    relationship: member?.relationship ?? '家屬',
+    personality: member?.personality ?? '未提供',
+    emotional_state: member?.emotional_state ?? '未提供',
+    interjection_triggers: Array.isArray(member?.interjection_triggers)
+      ? member!.interjection_triggers
+      : [],
+  })
+
+  const numberedMembers = [
+    scenarioWithList.family_member_1,
+    scenarioWithList.family_member_2,
+    scenarioWithList.family_member_3,
+  ].filter(Boolean) as FamilyCardDisplay[]
+
+  if (numberedMembers.length > 0) {
+    return numberedMembers.slice(0, 3).map(normalizeMember)
+  }
+
+  if (Array.isArray(scenarioWithList.family_members) && scenarioWithList.family_members.length > 0) {
+    return scenarioWithList.family_members.slice(0, 3).map(normalizeMember)
+  }
+
+  const base = scenarioStore.scenario.family_member
+  return [
+    normalizeMember(base),
+    {
+      ...normalizeMember(base),
+      name: `${base.name}`,
+      relationship: base.relationship,
+    },
+    {
+      ...normalizeMember(base),
+      name: `${base.name}`,
+      relationship: base.relationship,
+    },
+  ]
+})
+
 onMounted(() => {
   if (!scenarioStore.scenario) {
     console.warn('[BriefingView] No scenario data found, redirecting to home')
@@ -55,21 +113,26 @@ function enterScene(): void {
         </div>
 
         <div class="two-col-row">
-          <div class="info-card family-card">
+          <div
+            class="info-card family-card"
+            v-for="(member, index) in familyMembers"
+            :key="`${member.name}-${index}`"
+          >
             <div class="info-card-header">
               <div class="family-avatar">&#x1F464;</div>
               <div class="family-name-block">
-                <span class="family-name">{{ scenarioStore.scenario.family_member.name }}</span>
-                <span class="family-rel">{{ scenarioStore.scenario.family_member.relationship }}</span>
+                <span class="family-name">{{ member.name }}</span>
+                <span class="family-rel">{{ member.relationship }}</span>
               </div>
             </div>
             <div class="family-tags">
-              <span class="ftag">{{ scenarioStore.scenario.family_member.personality }}</span>
-              <span class="ftag">{{ scenarioStore.scenario.family_member.emotional_state }}</span>
+              <span class="ftag">{{ member.personality }}</span>
+              <span class="ftag">{{ member.emotional_state }}</span>
+              <span class="ftag">易插話：{{ member.interjection_triggers?.[0] || '無' }}</span>
             </div>
           </div>
 
-          <div class="info-card goals-card">
+          <!-- <div class="info-card goals-card">
             <div class="goals-title">&#x1F3AF; 溝通挑戰</div>
             <ul class="goals-list">
               <li
@@ -77,7 +140,7 @@ function enterScene(): void {
                 :key="challenge"
               >{{ challenge }}</li>
             </ul>
-          </div>
+          </div> -->
         </div>
 
         <div class="action-bar">
@@ -187,7 +250,8 @@ function enterScene(): void {
 }
 
 .two-col-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -351,7 +415,7 @@ function enterScene(): void {
   }
 
   .two-col-row {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 }
 
