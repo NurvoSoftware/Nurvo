@@ -62,20 +62,7 @@ const familyMembers = computed<FamilyCardDisplay[]>(() => {
     return scenarioWithList.family_members.slice(0, 3).map(normalizeMember)
   }
 
-  const base = scenarioStore.scenario.family_member
-  return [
-    normalizeMember(base),
-    {
-      ...normalizeMember(base),
-      name: `${base.name}`,
-      relationship: base.relationship,
-    },
-    {
-      ...normalizeMember(base),
-      name: `${base.name}`,
-      relationship: base.relationship,
-    },
-  ]
+  return []
 })
 
 onMounted(() => {
