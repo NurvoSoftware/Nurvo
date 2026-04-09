@@ -2,9 +2,17 @@
 import { computed } from 'vue'
 import type { ChatMessage, FamilyMember, FamilySender } from '@/types/game'
 
+interface TopBubbleItem {
+  id: string
+  label: string
+  target: 'patient' | FamilySender
+  variant?: 'patient' | 'family'
+}
+
 const props = defineProps<{
   patientName?: string
   familyMembers?: FamilyMember[]
+  topBubbles?: TopBubbleItem[]
   latestMessage?: ChatMessage | null
 }>()
 
@@ -18,6 +26,54 @@ function showFamilyBubble(index: number): boolean {
   return props.latestMessage?.sender === `family_${index}`
 }
 
+const showBottomDialog = computed<boolean>(() => {
+  const sender = props.latestMessage?.sender
+  return sender === 'patient' || (typeof sender === 'string' && sender.startsWith('family_'))
+})
+
+const dialogSpeakerName = computed<string>(() => {
+  const sender = props.latestMessage?.sender
+  if (sender === 'patient') return props.patientName || '病患'
+  if (typeof sender === 'string' && sender.startsWith('family_')) {
+    const idx = parseInt(sender.split('_')[1]!)
+    return props.familyMembers?.[idx]?.name || '家屬'
+  }
+  return ''
+})
+
+const isFamilySpeaker = computed<boolean>(() => {
+  const sender = props.latestMessage?.sender
+  return typeof sender === 'string' && sender.startsWith('family_')
+})
+
+const resolvedTopBubbles = computed<TopBubbleItem[]>(() => {
+  if (props.topBubbles && props.topBubbles.length > 0) {
+    return props.topBubbles
+  }
+
+  const bubbles: TopBubbleItem[] = [
+    {
+      id: 'patient-default',
+      label: props.patientName || '病患',
+      target: 'patient',
+      variant: 'patient',
+    },
+  ]
+
+  if (props.familyMembers && props.familyMembers.length > 0) {
+    props.familyMembers.forEach((fm, idx) => {
+      bubbles.push({
+        id: `family-default-${idx}`,
+        label: fm.name || '家屬',
+        target: `family_${idx}` as FamilySender,
+        variant: 'family',
+      })
+    })
+  }
+
+  return bubbles
+})
+
 const truncatedContent = computed<string>(() => {
   if (!props.latestMessage) return ''
   const content: string = props.latestMessage.content
@@ -30,6 +86,19 @@ const familyPositions = ['8%', '20%', '32%']
 <template>
   <div class="scene-fallback-2d">
     <div class="room">
+      <div class="top-bubbles">
+        <button
+          v-for="bubble in resolvedTopBubbles"
+          :key="bubble.id"
+          class="top-bubble"
+          :class="{ 'top-bubble--family': bubble.variant === 'family' }"
+          type="button"
+          @click="emit('select-target', bubble.target)"
+        >
+          {{ bubble.label }}
+        </button>
+      </div>
+
       <!-- Wall -->
       <div class="wall">
         <div class="window">
@@ -57,12 +126,8 @@ const familyPositions = ['8%', '20%', '32%']
         :title="'點擊與' + (patientName || '病患') + '對話'"
         @click="emit('select-target', 'patient')"
       >
-        <div v-if="showPatientBubble" class="speech-bubble speech-bubble--patient">
-          <p>{{ truncatedContent }}</p>
-        </div>
         <div class="person-head person-head--patient"></div>
         <div class="person-body person-body--patient"></div>
-        <span class="character-label">{{ patientName || '病患' }}</span>
       </div>
 
       <!-- Family Members -->
@@ -91,6 +156,15 @@ const familyPositions = ['8%', '20%', '32%']
         <div class="person-legs"></div>
         <span class="character-label">護理師（你）</span>
       </div>
+
+      <div
+        v-if="showBottomDialog"
+        class="bottom-dialog"
+        :class="{ 'bottom-dialog--family': isFamilySpeaker }"
+      >
+        <span class="bottom-dialog__speaker">{{ dialogSpeakerName }}</span>
+        <p class="bottom-dialog__content">{{ truncatedContent }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -114,6 +188,40 @@ const familyPositions = ['8%', '20%', '32%']
   width: 100%;
   height: 100%;
   position: relative;
+}
+
+.top-bubbles {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  z-index: 8;
+  max-width: calc(100% - 32px);
+}
+
+.top-bubble {
+  border: 1px solid rgba(186, 230, 253, 0.95);
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.top-bubble:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
+}
+
+.top-bubble--family {
+  border-color: rgba(251, 191, 36, 0.75);
+  background: rgba(254, 243, 199, 0.94);
 }
 
 .wall,
@@ -307,6 +415,48 @@ const familyPositions = ['8%', '20%', '32%']
   height: 24px;
   background: var(--nurvo-text-muted);
   border-radius: 0 0 4px 4px;
+}
+
+.bottom-dialog {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: min(760px, calc(100% - 32px));
+  border-radius: 14px;
+  border: 1px solid rgba(147, 197, 253, 0.8);
+  background: rgba(239, 246, 255, 0.95);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.24);
+  padding: 12px 16px;
+  z-index: 9;
+}
+
+.bottom-dialog--family {
+  border-color: rgba(251, 191, 36, 0.75);
+  background: rgba(254, 243, 199, 0.95);
+}
+
+.bottom-dialog__speaker {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e3a8a;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.bottom-dialog--family .bottom-dialog__speaker {
+  color: #92400e;
+}
+
+.bottom-dialog__content {
+  margin: 0;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .character-label {

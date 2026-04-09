@@ -126,22 +126,24 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="scene-main">
-      <div class="scene-map">
-        <!--
-        <SceneCanvas3D
-          v-if="webglSupported"
-          :patient-name="scenarioStore.scenario.patient_profile.name"
-          :family-name="scenarioStore.scenario.family_member.name"
-          :latest-message="latestNpcMessage"
-          @select-target="handleSelectTarget"
-        />
-        -->
-        <SceneFallback2D
-          :patient-name="scenarioStore.scenario.patient_profile.name"
-          :family-members="scenarioStore.scenario.family_members"
-          :latest-message="latestNpcMessage"
-          @select-target="handleSelectTarget"
-        />
+      <div class="scene-map-window">
+        <div class="scene-map">
+          <!--
+          <SceneCanvas3D
+            v-if="webglSupported"
+            :patient-name="scenarioStore.scenario.patient_profile.name"
+            :family-name="scenarioStore.scenario.family_member.name"
+            :latest-message="latestNpcMessage"
+            @select-target="handleSelectTarget"
+          />
+          -->
+          <SceneFallback2D
+            :patient-name="scenarioStore.scenario.patient_profile.name"
+            :family-members="scenarioStore.scenario.family_members"
+            :latest-message="latestNpcMessage"
+            @select-target="handleSelectTarget"
+          />
+        </div>
       </div>
 
       <aside class="chat-dock">
@@ -172,10 +174,13 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   position: relative;
-  background:
-    radial-gradient(circle at 18% 12%, #dbeafe 0%, transparent 30%),
-    radial-gradient(circle at 84% 8%, #e0f2fe 0%, transparent 34%),
-    #f8fbff;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(200, 230, 255, 0.04) 100%),
+    url('/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   overflow: hidden;
 }
 
@@ -344,13 +349,26 @@ onBeforeUnmount(() => {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 18px 22px;
+}
+
+.scene-map-window {
+  width: min(1120px, calc(100% - 470px));
+  height: min(74vh, 760px);
+  max-height: calc(100% - 8px);
+  border: 1px solid rgba(191, 219, 254, 0.85);
+  border-radius: 16px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
+  background: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
 }
 
 .scene-map {
   height: 100%;
-  border-top: 1px solid rgba(219, 234, 254, 0.7);
   overflow: hidden;
-  background: linear-gradient(180deg, #edf6ff 0%, #eef2ff 42%, #e2e8f0 100%);
+  background: #e2e8f0;
 }
 
 .chat-dock {
@@ -408,6 +426,15 @@ onBeforeUnmount(() => {
   .scene-main {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .scene-map-window {
+    width: 100%;
+    height: calc(100% - 340px);
+    min-height: 280px;
+    border-radius: 12px;
   }
 
   .scene-map {
