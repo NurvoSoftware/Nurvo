@@ -22,10 +22,6 @@ const emit = defineEmits<{
 
 const showPatientBubble = computed<boolean>(() => props.latestMessage?.sender === 'patient')
 
-function showFamilyBubble(index: number): boolean {
-  return props.latestMessage?.sender === `family_${index}`
-}
-
 const showBottomDialog = computed<boolean>(() => {
   const sender = props.latestMessage?.sender
   return sender === 'patient' || (typeof sender === 'string' && sender.startsWith('family_'))
@@ -140,13 +136,8 @@ const familyPositions = ['8%', '20%', '32%']
         :title="'點擊與' + fm.name + '對話'"
         @click="emit('select-target', `family_${idx}` as FamilySender)"
       >
-        <div v-if="showFamilyBubble(idx)" class="speech-bubble speech-bubble--family">
-          <p>{{ truncatedContent }}</p>
-        </div>
         <div class="person-head person-head--family"></div>
         <div class="person-body person-body--family"></div>
-        <div class="person-legs"></div>
-        <span class="character-label">{{ fm.name }}</span>
       </div>
 
       <!-- Nurse -->
@@ -367,6 +358,7 @@ const familyPositions = ['8%', '20%', '32%']
   border-color: var(--nurvo-family-dark);
 }
 
+
 .person-head--nurse {
   width: 32px;
   height: 32px;
@@ -472,8 +464,7 @@ const familyPositions = ['8%', '20%', '32%']
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
 }
 
-.character.patient:hover .character-label,
-.character.family:hover .character-label {
+.character.patient:hover .character-label {
   color: var(--nurvo-text-primary);
   background: rgba(255, 255, 255, 0.95);
 }
@@ -517,15 +508,6 @@ const familyPositions = ['8%', '20%', '32%']
   border-top: 6px solid var(--nurvo-white);
 }
 
-.speech-bubble--family {
-  background: var(--nurvo-family-bg);
-  color: var(--nurvo-family-text-dark);
-  border: 1px solid var(--nurvo-warning-border);
-}
-
-.speech-bubble--family::after {
-  border-top: 6px solid var(--nurvo-family-bg);
-}
 
 .speech-bubble p {
   margin: 0;

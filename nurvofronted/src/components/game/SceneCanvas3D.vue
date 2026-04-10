@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ChatMessage, FamilyMember, FamilySender } from '@/types/game'
-import { isFamilySender, familyDisplayIndex } from '@/types/game'
 import type { CharacterColors } from './CharacterModel.vue'
 import { TresCanvas } from '@tresjs/core'
 import { Html } from '@tresjs/cientos'
@@ -37,13 +36,6 @@ const familyColorSets = [
 
 const showPatientBubble = computed(() => props.latestMessage?.sender === 'patient')
 
-const activeFamilyBubbleIndex = computed<number>(() => {
-  if (!props.latestMessage) return -1
-  const sender = props.latestMessage.sender
-  if (isFamilySender(sender)) return familyDisplayIndex(sender)
-  return -1
-})
-
 const truncatedContent = computed(() => {
   if (!props.latestMessage) return ''
   const content = props.latestMessage.content
@@ -58,13 +50,6 @@ function familyAnimState(index: number): 'idle' | 'speaking' {
   return props.latestMessage?.sender === `family_${index}` ? 'speaking' : 'idle'
 }
 
-const activeFamilyBubblePosition = computed<[number, number, number]>(() => {
-  const idx = activeFamilyBubbleIndex.value
-  if (idx < 0 || idx >= familyPositions.length) return [0, 2.5, 0]
-  const position = familyPositions[idx]
-  if (!position) return [0, 2.5, 0]
-  return [position[0], 2.5, position[2]]
-})
 </script>
 
 <template>
@@ -177,16 +162,6 @@ const activeFamilyBubblePosition = computed<[number, number, number]>(() => {
         </Html>
       </TresGroup>
 
-      <TresGroup
-        v-if="activeFamilyBubbleIndex >= 0"
-        :position="activeFamilyBubblePosition"
-      >
-        <Html center :distance-factor="8">
-          <div class="speech-bubble speech-bubble--family">
-            <p>{{ truncatedContent }}</p>
-          </div>
-        </Html>
-      </TresGroup>
     </TresCanvas>
   </div>
 </template>
@@ -221,12 +196,6 @@ const activeFamilyBubblePosition = computed<[number, number, number]>(() => {
   background: white;
   color: var(--nurvo-text-primary, #0f172a);
   border: 1px solid #e2e8f0;
-}
-
-.speech-bubble--family {
-  background: #fffbeb;
-  color: #713f12;
-  border: 1px solid #fde68a;
 }
 
 @keyframes fadeIn {
