@@ -1,5 +1,7 @@
 """Scenario-related Pydantic models."""
 
+from typing import Optional
+
 from pydantic import BaseModel, field_validator
 
 
@@ -46,6 +48,7 @@ class Scenario(BaseModel):
     communication_challenges: list[str]
     correct_answers: CorrectAnswers
     time_limit_seconds: int = 480
+    background_image_url: Optional[str] = None
 
     @field_validator("family_members")
     @classmethod

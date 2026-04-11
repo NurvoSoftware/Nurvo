@@ -141,6 +141,7 @@ onBeforeUnmount(() => {
             :patient-name="scenarioStore.scenario.patient_profile.name"
             :family-members="scenarioStore.scenario.family_members"
             :latest-message="latestNpcMessage"
+            :background-url="scenarioStore.scenario.background_image_url"
             @select-target="handleSelectTarget"
           />
         </div>

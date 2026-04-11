@@ -43,6 +43,7 @@ export interface Scenario {
   correct_answers: CorrectAnswers
   time_limit_seconds: number
   created_at: string
+  background_image_url?: string | null
 }
 
 export type FamilySender = 'family_0' | 'family_1' | 'family_2'

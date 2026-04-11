@@ -14,7 +14,16 @@ const props = defineProps<{
   familyMembers?: FamilyMember[]
   topBubbles?: TopBubbleItem[]
   latestMessage?: ChatMessage | null
+  backgroundUrl?: string | null
 }>()
+
+const backgroundStyle = computed<Record<string, string> | undefined>(() => {
+  const url = props.backgroundUrl
+  if (!url) return undefined
+  return {
+    backgroundImage: `linear-gradient(180deg, rgba(8, 47, 73, 0.08) 0%, rgba(2, 6, 23, 0.18) 100%), url("${url}")`,
+  }
+})
 
 const emit = defineEmits<{
   (e: 'select-target', target: 'patient' | FamilySender): void
@@ -80,7 +89,7 @@ const familyPositions = ['8%', '20%', '32%']
 </script>
 
 <template>
-  <div class="scene-fallback-2d">
+  <div class="scene-fallback-2d" :style="backgroundStyle">
     <div class="room">
       <div class="top-bubbles">
         <button
