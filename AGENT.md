@@ -58,3 +58,13 @@ You are acting as an expert Full Stack Developer specializing in **Vue 3**, **Ty
 - **NEVER** output real API keys or secrets in code blocks.
 - **ALWAYS** suggest using `.env` files for sensitive data.
 - **ALWAYS** check `.gitignore` before creating new large files or directories that shouldn't be committed.
+
+## 8. WebSocket Chat Protocol
+- Endpoint: `ws://host/api/chat/{session_id}`
+- **Client → Server**：
+    - `{ type: "nurse_message", target: "patient"|"family_0"|"family_1"|"family_2", content: "..." }`
+    - `{ type: "activity", kind: "typing_start"|"typing_end"|"audio_start"|"audio_end"|"connection_resumed" }`：通知後端使用者活動狀態，暫停或恢復閒置偵測。
+- **Server → Client**：
+    - `{ type: "npc_message", sender, content, message_id, elapsed_seconds, audio_base64?, is_interjection?, is_proactive? }`
+    - `{ type: "typing", sender }`、`{ type: "timer_update"|"timer_expired", ... }`、`{ type: "error", content }`
+- 後端會在使用者閒置超過 `PROACTIVE_IDLE_THRESHOLDS[streak]` 秒時主動推送 NPC 訊息（`is_proactive: true`）；使用者送出 `nurse_message` 會將 streak 重置為 0（影響下次門檻與強度），無總次數上限。
