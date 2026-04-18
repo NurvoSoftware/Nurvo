@@ -25,7 +25,7 @@
 
 2. 於專案根目錄執行以下指令啟動所有服務：
    ```bash
-   docker compose -f ../infra/docker-compose.yml up
+   docker compose -f infra/docker-compose.yml build --no-cache && docker compose -f infra/docker-compose.yml up --force-recreate
    ```
 
 3. 服務啟動後：

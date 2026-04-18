@@ -16,4 +16,10 @@ ELEVENLABS_FAMILY_VOICE_ID_2: str = os.getenv("ELEVENLABS_FAMILY_VOICE_ID_2", os
 
 OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o")
 OPENAI_TIMEOUT: int = int(os.getenv("OPENAI_TIMEOUT", "30"))
+
+DALLE_MODEL: str = os.getenv("DALLE_MODEL", "dall-e-3")
+DALLE_SIZE: str = os.getenv("DALLE_SIZE", "1792x1024")
+DALLE_QUALITY: str = os.getenv("DALLE_QUALITY", "standard")
+DALLE_TIMEOUT: int = int(os.getenv("DALLE_TIMEOUT", "60"))
+
 GAME_TIME_LIMIT: int = int(os.getenv("GAME_TIME_LIMIT", "480"))
