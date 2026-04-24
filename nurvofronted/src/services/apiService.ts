@@ -245,6 +245,15 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
   return data.text || ''
 }
 
+export async function fetchBackgroundImage(
+  sessionId: string,
+): Promise<{ pending: boolean; url: string | null }> {
+  const data = await request<{ status: string; url: string | null }>(
+    `/scenario/${sessionId}/background`,
+  )
+  return { pending: data.status === 'pending', url: data.url }
+}
+
 export async function evaluateScore(sessionId: string): Promise<ScoreResult> {
   if (USE_MOCK_API) {
     return createMockScoreResult(sessionId)

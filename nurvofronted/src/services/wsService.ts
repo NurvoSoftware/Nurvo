@@ -7,6 +7,8 @@ let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let currentSessionId: string | null = null
 const RECONNECT_DELAY = 3000
 const USE_MOCK_API = import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_API === 'true'
+/** digiRunner WebSocket Proxy 站點名稱（對應 /website/{siteName}）；見 digiRunner WebSocketServer.java */
+const DIGIRUNNER_WS_SITE = import.meta.env.VITE_DIGIRUNNER_WS_SITE ?? 'nurvo-chat'
 
 // Timer event callbacks
 let _onTimerUpdate: ((seconds: number) => void) | null = null
@@ -40,13 +42,10 @@ export function onTimerExpired(cb: () => void): void {
   _onTimerExpired = cb
 }
 
-function getWsUrl(sessionId: string): string {
+function getWsUrl(_sessionId: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  if (import.meta.env.DEV) {
-    const host = window.location.hostname
-    return `${protocol}//${host}:8000/api/chat/${sessionId}`
-  }
-  return `${protocol}//${window.location.host}/api/chat/${sessionId}`
+  // digiRunner 固定入口 /website/{siteName}；session 以第一則 session_join 傳（後端 /api/chat/ws）
+  return `${protocol}//${window.location.host}/website/${DIGIRUNNER_WS_SITE}`
 }
 
 function handleMessage(event: MessageEvent) {
@@ -115,6 +114,7 @@ export function connect(sessionId: string) {
   ws = new WebSocket(url)
 
   ws.onopen = () => {
+    ws!.send(JSON.stringify({ type: 'session_join', session_id: sessionId }))
     chatStore.setConnected(true)
     if (reconnectTimer) {
       clearTimeout(reconnectTimer)

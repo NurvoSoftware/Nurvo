@@ -154,7 +154,8 @@ export interface WsTimerExpired {
 export interface WsErrorMessage {
   type: 'error'
   message: string
-  retryable: boolean
+  /** 後端目前固定附帶；未附帶時視為不可重試 */
+  retryable?: boolean
 }
 
 export type WsServerMessage =
