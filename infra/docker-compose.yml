@@ -6,13 +6,39 @@ services:
     container_name: nurvo-backend
     ports:
       - "8000:8000"
+    expose:
+      - "8000"
     env_file:
       - ../nurvobackend/.env
     restart: unless-stopped
     volumes:
-      # Optional: Mount source code for hot-reloading in dev (if using uvicorn --reload)
-      # - ./nurvobackend:/app
       - nurvo_data:/app/data
+
+  # digiRunner：僅綁 127.0.0.1:31080，避免在 LAN 上曝露全介面。建議在執行 compose 的環境或
+  # 專案根目錄 / infra 同層的 .env 設定 DIGIRUNNER_DB_PASSWORD；未設定則為空，與舊版相同。
+  digirunner:
+    image: tpisoftwareopensource/digirunner-open-source:release-v4.7.3
+    container_name: nurvo-digirunner
+    ports:
+      - "127.0.0.1:31080:18080"
+    environment:
+      - TZ=Asia/Taipei
+      # Switch H2 from in-memory to file-based so proxy config survives restarts
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/dgrdb;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE;Mode=MySQL
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=${DIGIRUNNER_DB_PASSWORD:-}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    volumes:
+      - digirunner_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18080/dgrv4/liveness"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   frontend:
     build:
@@ -20,10 +46,14 @@ services:
       dockerfile: Dockerfile
     container_name: nurvo-frontend
     ports:
-      - "8080:80"  # Expose frontend on port 8080 on the host
+      - "8080:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+      digirunner:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   nurvo_data:
+  digirunner_data:
