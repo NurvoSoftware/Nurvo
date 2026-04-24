@@ -1,11 +1,18 @@
 """Speech-to-Text service using ElevenLabs Scribe API."""
 
+import logging
+
 import httpx
 
 from config import ELEVENLABS_API_KEY
 
+logger = logging.getLogger(__name__)
+
 _STT_URL = "https://api.elevenlabs.io/v1/speech-to-text"
 _TIMEOUT = 30.0
+
+STT_USER_FACING_ERROR = "語音轉文字失敗，請稍後再試。"
+_MAX_BODY_LOG = 500
 
 
 async def transcribe_audio(audio_bytes: bytes, filename: str = "audio.webm") -> str:
@@ -37,9 +44,13 @@ async def transcribe_audio(audio_bytes: bytes, filename: str = "audio.webm") -> 
             result = response.json()
             return result.get("text", "")
     except httpx.HTTPStatusError as e:
-        error_detail = e.response.text
-        print(f"[stt_service] API error: {e.response.status_code} - {error_detail}", flush=True)
-        raise ValueError(f"STT API 錯誤: {error_detail}")
-    except Exception as e:
-        print(f"[stt_service] Transcription failed: {e}", flush=True)
-        raise ValueError(f"STT 系統錯誤: {str(e)}")
+        body_snip = (e.response.text or "")[:_MAX_BODY_LOG]
+        logger.error(
+            "STT API HTTP %s: %s",
+            e.response.status_code,
+            body_snip,
+        )
+        raise ValueError(STT_USER_FACING_ERROR)
+    except Exception:
+        logger.exception("STT transcription failed")
+        raise ValueError(STT_USER_FACING_ERROR)

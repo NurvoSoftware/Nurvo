@@ -1,15 +1,31 @@
 """Scenario generation router."""
 
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from models.chat import GameSession, SessionStatus
 from models.scenario import Scenario
 from prompts.patient_conversation import build_patient_prompt
 from prompts.family_conversation import build_family_prompt
-from services.scenario_generator import generate_scenario
+from services.scenario_generator import generate_scenario, get_background_image_status
 from session_store import create_session
 
 router = APIRouter(prefix="/scenario", tags=["scenario"])
+
+
+class GenerateScenarioRequest(BaseModel):
+    difficulty: Literal["easy", "medium", "hard"] = "medium"
+
+
+@router.get("/{session_id}/background")
+async def get_scenario_background(session_id: str) -> dict:
+    """Poll for the DALL-E background image. Returns status=pending until ready."""
+    is_pending, url = get_background_image_status(session_id)
+    if is_pending:
+        return {"status": "pending", "url": None}
+    return {"status": "ready", "url": url}
 
 
 class _ScenarioResponse(Scenario):
@@ -21,9 +37,9 @@ class _ScenarioResponse(Scenario):
 
 
 @router.post("/generate")
-async def generate_scenario_endpoint() -> dict:
+async def generate_scenario_endpoint(body: GenerateScenarioRequest) -> dict:
     """Generate a new scenario and create a game session."""
-    session_id, scenario = await generate_scenario()
+    session_id, scenario = await generate_scenario(body.difficulty)
 
     # Build system prompts for patient and family NPCs
     patient = scenario.patient_profile

@@ -183,7 +183,7 @@ async def maybe_family_interjection(session: GameSession) -> tuple[str, bool, st
             interjection_text = _LABEL_RE.sub("", lines[1].strip())
             if not interjection_text:
                 return "", False, "", -1
-            audio_base64 = await get_family_voice(interjection_text)
+            audio_base64 = await get_family_voice(interjection_text, candidate_index)
             return interjection_text, True, audio_base64, candidate_index
 
         return "", False, "", -1

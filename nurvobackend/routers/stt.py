@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 
-from services.stt_service import transcribe_audio
+from services.stt_service import STT_USER_FACING_ERROR, transcribe_audio
 
 router = APIRouter(tags=["stt"])
 
@@ -17,7 +17,7 @@ async def stt_transcribe(file: UploadFile = File(...)) -> dict:
 
     try:
         text = await transcribe_audio(audio_bytes, filename=file.filename or "audio.webm")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail=STT_USER_FACING_ERROR)
 
     return {"text": text}

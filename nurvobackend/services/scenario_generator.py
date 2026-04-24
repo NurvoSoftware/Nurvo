@@ -18,11 +18,16 @@ from config import (
     OPENAI_TIMEOUT,
 )
 from models.scenario import Scenario
-from prompts.scenario_generation import SCENARIO_GENERATION_PROMPT
+from prompts.scenario_generation import TIME_LIMIT_BY_DIFFICULTY, build_scenario_generation_prompt
 
 
 _client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 _logger = logging.getLogger(__name__)
+
+# Tracks in-flight DALL-E tasks and their resolved URLs, keyed by session_id.
+# Entries are never evicted (MVP memory is negligible: ~100 bytes per session).
+_pending: set[str] = set()
+_image_results: dict[str, str | None] = {}
 
 _BACKGROUND_PROMPT = (
     "A realistic, warm hospital ward interior scene. "
@@ -37,13 +42,20 @@ _BACKGROUND_PROMPT = (
 )
 
 
-async def _generate_scenario_text() -> Scenario:
+def _norm_difficulty(difficulty: str) -> str:
+    if difficulty in TIME_LIMIT_BY_DIFFICULTY:
+        return difficulty
+    return "medium"
+
+
+async def _generate_scenario_text(difficulty: str) -> Scenario:
     """Generate scenario text via GPT-4o and parse it into a Scenario model."""
+    d = _norm_difficulty(difficulty)
     response = await _client.chat.completions.create(
         model=OPENAI_MODEL,
         messages=[
             {"role": "system", "content": "You are a nursing education scenario generator. Respond only with valid JSON."},
-            {"role": "user", "content": SCENARIO_GENERATION_PROMPT},
+            {"role": "user", "content": build_scenario_generation_prompt(d)},
         ],
         temperature=0.9,
         timeout=OPENAI_TIMEOUT,
@@ -68,7 +80,10 @@ async def _generate_scenario_text() -> Scenario:
             detail=f"Failed to parse scenario JSON from OpenAI: {exc}",
         )
 
-    return Scenario(**scenario_data)
+    scenario = Scenario(**scenario_data)
+    return scenario.model_copy(
+        update={"time_limit_seconds": TIME_LIMIT_BY_DIFFICULTY[d]},
+    )
 
 
 async def _generate_background_image() -> str | None:
@@ -93,16 +108,32 @@ async def _generate_background_image() -> str | None:
         return None
 
 
-async def generate_scenario() -> tuple[str, Scenario]:
-    """Generate scenario text (GPT-4o) and background image (DALL-E 3) in parallel."""
-    try:
-        scenario, image_url = await asyncio.gather(
-            _generate_scenario_text(),
-            _generate_background_image(),
-        )
+async def _store_background_image(session_id: str) -> None:
+    """Background task: generate image and store result in _image_results."""
+    url = await _generate_background_image()
+    _image_results[session_id] = url
+    _pending.discard(session_id)
 
-        scenario.background_image_url = image_url
+
+def start_background_image(session_id: str) -> None:
+    """Fire DALL-E generation as a non-blocking asyncio task."""
+    _pending.add(session_id)
+    asyncio.create_task(_store_background_image(session_id))
+
+
+def get_background_image_status(session_id: str) -> tuple[bool, str | None]:
+    """Return (is_pending, url). is_pending=True means DALL-E is still running."""
+    if session_id in _pending:
+        return True, None
+    return False, _image_results.get(session_id)
+
+
+async def generate_scenario(difficulty: str = "medium") -> tuple[str, Scenario]:
+    """Generate scenario text via GPT-4o and kick off DALL-E in the background."""
+    try:
+        scenario = await _generate_scenario_text(difficulty)
         session_id = str(uuid.uuid4())
+        start_background_image(session_id)
         return session_id, scenario
 
     except HTTPException:
