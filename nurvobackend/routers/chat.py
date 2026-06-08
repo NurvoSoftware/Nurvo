@@ -204,7 +204,7 @@ async def _timer_task(ws: WebSocket, session_id: str, start_time: datetime) -> N
 
 
 async def _run_chat_session(ws: WebSocket, session_id: str) -> None:
-    """Shared chat loop after session_id is known, for path-based or digiRunner flows."""
+    """Shared chat loop after session_id is known (path-based flow)."""
     session = get_session(session_id)
     if session is None:
         await _send_json(ws, _ws_error("Session not found"))
@@ -394,36 +394,6 @@ async def _run_chat_session(ws: WebSocket, session_id: str) -> None:
         for task in audio_tasks:
             task.cancel()
         _session_locks.pop(session_id, None)
-
-
-@router.websocket("/ws")
-async def chat_websocket_digirunner(ws: WebSocket) -> None:
-    """Fixed path for digiRunner WebSocket Proxy.
-
-    digiRunner exposes clients at ws://gateway/website/{siteName} and opens one backend URI per
-    client; session_id must be sent as the first frame: {"type":"session_join","session_id":"..."}.
-    """
-    await ws.accept()
-    try:
-        raw = await ws.receive_text()
-    except WebSocketDisconnect:
-        return
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        await _send_json(ws, _ws_error("Invalid JSON"))
-        await ws.close()
-        return
-    if data.get("type") != "session_join":
-        await _send_json(ws, _ws_error("First message must be session_join"))
-        await ws.close()
-        return
-    session_id = str(data.get("session_id", "")).strip()
-    if not session_id:
-        await _send_json(ws, _ws_error("session_id required"))
-        await ws.close()
-        return
-    await _run_chat_session(ws, session_id)
 
 
 @router.websocket("/{session_id}")

@@ -17,16 +17,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // digiRunner WebSocket：/website/{siteName} → 容器 31080（見 WebSocketServer.java）
-      '/website': {
-        target: 'http://localhost:31080',
+      // Proxy REST + chat WebSocket directly to the FastAPI backend
+      '/api': {
+        target: 'http://localhost:8000',
         changeOrigin: true,
         ws: true,
-      },
-      '/api': {
-        target: 'http://localhost:31080',
-        changeOrigin: true,
-        ws: false,
       },
     },
   },

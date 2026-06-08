@@ -18,8 +18,7 @@ Docker Compose stack.
 | Component | Role | Location |
 |-----------|------|----------|
 | Frontend SPA | Vue 3 + Vite + TS game UI (6-step flow, chat, dashboard) | `nurvofronted/` (nginx, host `:8080`→`:80`) |
-| API gateway | digiRunner OSS v4.7.3 — REST + WebSocket proxy in front of FastAPI; admin console | `infra/docker-compose.yml` (`127.0.0.1:31080`→`:18080`) |
-| Backend API | FastAPI app: scenario gen, chat loop, scoring, STT | `nurvobackend/` (host `:8000`, internal upstream) |
+| Backend API | FastAPI app: scenario gen, chat loop, scoring, STT | `nurvobackend/` (host `:8000`) |
 | Conversation engine | NPC replies, family interjections, idle→proactive speech | `nurvobackend/services/conversation_engine.py` |
 | Session store | In-memory game state (no DB) | `nurvobackend/session_store.py` |
 | External AI services | LLM, image, voice (see table below) | called from `nurvobackend/services/` |
@@ -29,11 +28,9 @@ Docker Compose stack.
 End-to-end request path:
 
 1. Browser loads the Vue SPA from nginx (`:8080`).
-2. SPA calls `/api/*` (REST) and `/website/<site>` (WebSocket) — both go to **digiRunner**
-   (`:31080`), never directly to the backend.
-3. digiRunner proxies to FastAPI (`backend:8000`): REST `/api/*`, WebSocket → fixed path
-   `/api/chat/ws`.
-4. FastAPI calls out to OpenAI, DALL·E 3, and ElevenLabs as needed.
+2. SPA calls `/api/*` (REST) and `/api/chat/{session_id}` (WebSocket); the frontend nginx
+   reverse-proxies both directly to FastAPI (`backend:8000`).
+3. FastAPI calls out to OpenAI, DALL·E 3, and ElevenLabs as needed.
 
 Game lifecycle (the user journey the data follows):
 
@@ -41,7 +38,7 @@ Game lifecycle (the user journey the data follows):
    DALL·E 3 renders the ward background **asynchronously** (frontend polls
    `GET /api/scenario/{id}/background`). A `GameSession` is created in memory.
 2. **Briefing** — frontend shows patient profile, family cards, communication challenges.
-3. **Chat** — WebSocket: client sends `session_join` then `nurse_message{target}`; the
+3. **Chat** — WebSocket at `/api/chat/{session_id}`: client sends `nurse_message{target}`; the
    conversation engine returns `npc_message` (+ `npc_audio` TTS), plus probabilistic family
    interjections and idle-triggered proactive speech, under a per-difficulty countdown.
 4. **Record** — `POST /api/record/submit` stores the nurse's clinical note; status → SCORING.
@@ -58,7 +55,6 @@ Game lifecycle (the user journey the data follows):
 | OpenAI DALL·E 3 | Async ward background image generation |
 | ElevenLabs TTS (`eleven_flash_v2_5`) | NPC voices, gender-aware per role |
 | ElevenLabs Scribe | Nurse speech-to-text (Mandarin) |
-| digiRunner OSS v4.7.3 | API gateway / WebSocket proxy; bundled file-based H2 for its own config |
 
 ## What is intentionally out of scope
 
@@ -66,4 +62,3 @@ Game lifecycle (the user journey the data follows):
   Supabase (auth + storage) is *planned*, not built. No user accounts, no migrations.
 - **Localization** — Traditional Chinese only.
 - **Native mobile** — web/browser only (responsive layout); no iOS/Android/desktop client.
-- **The bundled H2** belongs to digiRunner (gateway config), not application data.

@@ -40,7 +40,6 @@ You are acting as an expert Full Stack Developer specializing in **Vue 3**, **Ty
 - **AI Services**:
     - **Eleven Labs**: For Text-to-Speech (TTS) voice synthesis.
     - **OpenAI GPT-4o (via OpenAI API)**: For LLM-based scenario generation, NPC conversation, and scoring analysis.
-    - **DigiRunner**: For API management, traffic protection, and security enhancement.
 - **Handling AI APIs**: These are paid/limited APIs. Ensure robust error handling (e.g., graceful handling of rate limits or API failures).
 
 ## 5. Task Management
@@ -60,11 +59,8 @@ You are acting as an expert Full Stack Developer specializing in **Vue 3**, **Ty
 - **ALWAYS** check `.gitignore` before creating new large files or directories that shouldn't be committed.
 
 ## 8. WebSocket Chat Protocol
-- Primary browser endpoint: `ws://host/website/{siteName}` through digiRunner.
-- Backend target for digiRunner: `ws://backend:8000/api/chat/ws`; the first client frame must be `{ type: "session_join", session_id: "..." }`.
-- Optional FastAPI debug endpoint: `ws://host/api/chat/{session_id}`.
+- Browser endpoint: `ws://host/api/chat/{session_id}` (`session_id` is carried in the path; the session loop starts on connect, no handshake frame).
 - **Client → Server**：
-    - `{ type: "session_join", session_id: "..." }`：only for the digiRunner `/api/chat/ws` backend target, and it must be the first frame.
     - `{ type: "nurse_message", target: "patient"|"family_0"|"family_1"|"family_2", content: "..." }`
     - `{ type: "activity", kind: "typing_start"|"typing_end"|"audio_start"|"audio_end"|"connection_resumed" }`：通知後端使用者活動狀態，暫停或恢復閒置偵測。
 - **Server → Client**：

@@ -13,9 +13,8 @@
 docker compose -f infra/docker-compose.yml build --no-cache && \
   docker compose -f infra/docker-compose.yml up --force-recreate
 
-# Frontend:        http://localhost:8080
-# API gateway:     http://localhost:31080
-# digiRunner admin: http://localhost:31080/dgrv4/login   (default manager / manager123)
+# Frontend:        http://localhost:8080  (nginx proxies /api/* and /api/chat/ to the backend)
+# Backend (direct, for debugging): http://localhost:8000
 
 # Stop:
 docker compose -f infra/docker-compose.yml down
@@ -37,10 +36,9 @@ npm install
 npm run dev                  # http://localhost:5173
 ```
 
-> The Vite dev server proxies `/api` and `/website` → `http://localhost:31080`, so it expects
-> **digiRunner** on `:31080` (e.g. run only `digirunner` + `backend` from the compose file).
-> To bypass the gateway, point `nurvofronted/vite.config.ts` at `http://localhost:8000`, or set
-> `VITE_USE_MOCK_API=true` in `nurvofronted/.env.development` to run with no backend at all.
+> The Vite dev server proxies `/api` (REST + WebSocket) → `http://localhost:8000`, so just run
+> the backend alongside it. Set `VITE_USE_MOCK_API=true` in `nurvofronted/.env.development` to
+> run the UI with no backend at all.
 
 ## Environment variables
 
@@ -62,10 +60,8 @@ Backend vars live in `nurvobackend/.env` (template: `nurvobackend/.env.example`)
 | `PROACTIVE_COOLDOWN_SECONDS` | no | `10` | Min gap between proactive events |
 | `PROACTIVE_ENDGAME_GUARD_SECONDS` | no | `30` | Suppress proactive speech near timeout |
 | `RECONNECT_GRACE_SECONDS` | no | `10` | WebSocket reconnect grace window |
-| `DIGIRUNNER_DB_PASSWORD` | no | empty | digiRunner H2 datasource password (root/infra `.env`) |
 
-Frontend vars (`nurvofronted/.env.development`): `VITE_USE_MOCK_API`, `VITE_DIGIRUNNER_WS_SITE`
-(default `nurvo-chat`, must match the digiRunner site name).
+Frontend vars (`nurvofronted/.env.development`): `VITE_USE_MOCK_API`.
 
 ## Common tasks
 
@@ -87,17 +83,10 @@ cd nurvofronted && npm run lint         # eslint + oxlint + prettier
 docker compose -f infra/docker-compose.yml build --no-cache && \
   docker compose -f infra/docker-compose.yml up -d --force-recreate
 ```
-Production nginx already routes `/api/` and `/website/` to digiRunner; port `8000` is for
-internal upstream only — do not expose it. Change the digiRunner admin password before any
-non-local deployment.
+Production nginx routes `/api/` (REST) and `/api/chat/` (WebSocket) directly to the FastAPI
+backend; port `8000` is for internal upstream only — do not expose it.
 
 ## Troubleshooting
-
-### digiRunner fails / logs errors on repeated startup (H2 schema init)
-**Cause:** The bundled `schema.sql` replays on every boot, but the persisted file-based H2
-already has the seed rows after the first start.
-**Fix:** `SPRING_SQL_INIT_CONTINUE_ON_ERROR=true` is set in `infra/docker-compose.yml` to
-tolerate the repeated init. If you wipe `digirunner_data`, the first boot re-seeds cleanly.
 
 ### Game sessions vanish after a backend restart
 **Cause:** Sessions are stored **in memory only** (`session_store.py`); there is no database.
@@ -105,11 +94,10 @@ tolerate the repeated init. If you wipe `digirunner_data`, the first boot re-see
 Supabase work; don't rely on session continuity across restarts.
 
 ### WebSocket won't connect / "session not found"
-**Cause:** Wrong path or missing handshake. Through the gateway the client must connect to
-`/website/<site>` (site = `VITE_DIGIRUNNER_WS_SITE`, default `nurvo-chat`) and send
-`{"type":"session_join","session_id":"..."}` as the **first** frame.
-**Fix:** Verify the site name matches digiRunner's config; for gateway-free debugging connect
-directly to `ws://localhost:8000/api/chat/{session_id}`.
+**Cause:** Wrong path or an unknown/expired `session_id`. The client must connect to
+`ws://<host>/api/chat/{session_id}` with a valid id from `POST /api/scenario/generate`.
+**Fix:** Confirm the session was generated (and that the backend hasn't restarted — sessions are
+in-memory). In dev, ensure Vite's `/api` proxy has `ws: true` so the upgrade reaches the backend.
 
 ### Background image never appears
 **Cause:** DALL·E generation is async; the client polls until ready.

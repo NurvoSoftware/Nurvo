@@ -162,13 +162,12 @@ generated clinical scenario, then gets an LLM-graded scorecard. MVP stage.
 
 **Stack & topology** (Docker Compose, `infra/docker-compose.yml`):
 - `nurvofronted/` — Vue 3 + Vite + TS + Pinia + PrimeVue (nginx, `:8080`).
-- `digirunner` — digiRunner OSS gateway / WebSocket proxy in front of the backend
-  (loopback `127.0.0.1:31080`). Frontend hits `/api/*` and `/website/<site>`, never FastAPI directly.
 - `nurvobackend/` — FastAPI (Python 3.11): routers `scenario` / `chat` (WebSocket) / `record` /
   `score` / `stt`; services call OpenAI (gpt-4o + gpt-4.1-mini), DALL·E 3, ElevenLabs TTS+Scribe.
+  The frontend nginx proxies `/api/*` and `/api/chat/` straight to FastAPI (no gateway).
 
 **Conventions:** Vue `<script setup lang="ts">` + Composition API + Pinia; FastAPI async +
-Pydantic + PEP 8. See `AGENT.md` for the WebSocket protocol (`session_join` → `nurse_message`).
+Pydantic + PEP 8. See `AGENT.md` for the WebSocket protocol (path-based `/api/chat/{session_id}`).
 
 **Critical caveat:** sessions are **in-memory only** (`nurvobackend/session_store.py`) — no DB,
 lost on restart; Supabase is planned, not built. Don't assume persistence.

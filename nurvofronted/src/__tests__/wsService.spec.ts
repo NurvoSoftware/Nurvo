@@ -44,16 +44,15 @@ describe('wsService', () => {
     })
   })
 
-  it('connects through the digiRunner website path and sends session_join on open', () => {
+  it('connects directly to the FastAPI chat path and sends activity on open', () => {
     connect('session-123')
 
     const socket = FakeWebSocket.instances[0]!
-    expect(socket.url).toBe('ws://localhost:5173/website/nurvo-chat')
+    expect(socket.url).toBe('ws://localhost:5173/api/chat/session-123')
 
     socket.onopen?.()
 
     expect(socket.sent).toEqual([
-      JSON.stringify({ type: 'session_join', session_id: 'session-123' }),
       JSON.stringify({ type: 'activity', kind: 'connection_resumed' }),
     ])
 

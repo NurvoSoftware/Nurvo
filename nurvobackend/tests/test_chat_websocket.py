@@ -1,4 +1,4 @@
-"""Smoke tests for the backend WebSocket path used by digiRunner."""
+"""Smoke tests for the backend WebSocket chat endpoint."""
 
 import asyncio
 import json
@@ -13,27 +13,7 @@ from models.chat import GameSession
 from session_store import create_session, delete_session
 
 
-class ChatWebSocketGatewayContractTest(unittest.TestCase):
-    def test_digirunner_websocket_path_requires_session_join_first(self) -> None:
-        client = TestClient(app)
-
-        with client.websocket_connect("/api/chat/ws") as ws:
-            ws.send_text(json.dumps({"type": "nurse_message", "content": "您好"}, ensure_ascii=False))
-            data = ws.receive_json()
-
-        self.assertEqual(data["type"], "error")
-        self.assertEqual(data["message"], "First message must be session_join")
-
-    def test_digirunner_websocket_path_reports_missing_session_after_join(self) -> None:
-        client = TestClient(app)
-
-        with client.websocket_connect("/api/chat/ws") as ws:
-            ws.send_text(json.dumps({"type": "session_join", "session_id": "missing"}, ensure_ascii=False))
-            data = ws.receive_json()
-
-        self.assertEqual(data["type"], "error")
-        self.assertEqual(data["message"], "Session not found")
-
+class ChatWebSocketTest(unittest.TestCase):
     def test_npc_text_is_sent_before_async_tts_audio(self) -> None:
         client = TestClient(app)
         session_id = "session-async-audio"

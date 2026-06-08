@@ -8,32 +8,27 @@
 > initial system record, not authored at decision time — dates are approximate to the commits
 > that introduced each choice. Refine when the original authors confirm details.
 
-## ~2026 — digiRunner gateway in front of FastAPI
+## 2026-06-08 — Removed digiRunner; frontend talks to FastAPI directly
 
-**Context:** The frontend needs one stable entry point for both REST and WebSocket traffic,
-and the team wanted to avoid exposing the FastAPI backend directly or scattering proxy rules
-across nginx and app code.
+**Context:** Every request used to route Browser → nginx → digiRunner → FastAPI. The gateway's
+features (runtime routing, admin console, H2-persisted config) were not actually used, and the
+extra hop made local dev and deployment more cumbersome — a gateway had to run on `:31080`, the
+WebSocket handshake was order-dependent, and the default admin creds were a standing risk.
 
-**Decision:** Run TPIsoftware digiRunner OSS v4.7.3 as an API gateway. Browser → nginx →
-digiRunner → FastAPI. REST goes through `/api/*`; WebSocket connects to `/website/<site>`
-(default site `nurvo-chat`) which digiRunner proxies to the backend's fixed `/api/chat/ws`.
-The gateway also persists its proxy/site config in a **file-based H2** database at
-`/app/data/dgrdb` so configuration survives container restarts. It binds **loopback-only**
-(`127.0.0.1:31080`) to avoid LAN exposure.
+**Decision:** Drop the digiRunner service entirely. The frontend nginx now reverse-proxies
+`/api/*` (REST) and `/api/chat/{session_id}` (WebSocket) straight to FastAPI at `backend:8000`.
+Chat uses the existing path-based WebSocket endpoint (`session_id` in the URL); the gateway-only
+`/api/chat/ws` endpoint and its `session_join` handshake were deleted.
 
 **Alternatives considered:**
-- nginx-only reverse proxy — rejected: no admin console / runtime-editable routing, weaker
-  WebSocket proxy story.
-- Expose FastAPI directly — rejected: larger attack surface, no gateway-level controls.
+- Keep digiRunner but simplify its config — rejected: still an unused moving part plus dev/ops overhead.
+- Minimal repoint (keep `/website` naming pointed at the backend) — rejected: leaves confusing
+  gateway-shaped leftovers in code and docs.
 
 **Consequences:**
-- Makes routing/observability/runtime config easier (admin console at `/dgrv4/login`).
-- Makes local dev heavier: the Vite proxy points at `:31080`, so digiRunner must be running
-  locally (or you edit `vite.config.ts` to hit `:8000`).
-- The WebSocket handshake is order-dependent: the **first** frame must be `session_join`.
-- Operational risk: default admin creds (`manager / manager123`) must be changed before any
-  non-local deployment.
-- Revisit if: the gateway becomes a bottleneck, or routing needs outgrow what nginx could do.
+- Simpler dev (just backend + Vite) and deploy (two containers, no H2 volume, no admin console).
+- Lost gateway capabilities (edge rate-limiting, runtime route edits) — none were in use.
+- Revisit if: a real edge need returns (auth at the gateway, multi-service routing) — reintroduce one then.
 
 ## ~2026 — In-memory session store (MVP)
 
