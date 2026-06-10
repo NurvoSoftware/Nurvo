@@ -1,4 +1,4 @@
-"""Scenario generation service using OpenAI GPT-4o and DALL-E 3."""
+"""Scenario generation service using OpenAI GPT-4o and image generation API."""
 
 import asyncio
 import json
@@ -127,9 +127,14 @@ async def _generate_background_image() -> str | None:
             n=1,
             timeout=DALLE_TIMEOUT,
         )
-        return response.data[0].url
+        img = response.data[0]
+        if img.url:
+            return img.url
+        if img.b64_json:
+            return f"data:image/png;base64,{img.b64_json}"
+        return None
     except Exception as exc:
-        _logger.warning("DALL-E 3 image generation failed: %s", exc)
+        _logger.warning("Image generation failed: %s", exc)
         return None
 
 

@@ -238,9 +238,15 @@ export async function submitRecord(
   })
 }
 
+function audioFilename(mimeType: string): string {
+  if (mimeType.includes('mp4') || mimeType.includes('m4a')) return 'audio.mp4'
+  if (mimeType.includes('ogg')) return 'audio.ogg'
+  return 'audio.webm'
+}
+
 export async function transcribeAudio(audioBlob: Blob): Promise<string> {
   const formData = new FormData()
-  formData.append('file', audioBlob, 'audio.webm')
+  formData.append('file', audioBlob, audioFilename(audioBlob.type))
 
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 30000)

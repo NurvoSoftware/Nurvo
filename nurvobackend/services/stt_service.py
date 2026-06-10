@@ -27,8 +27,10 @@ async def transcribe_audio(audio_bytes: bytes, filename: str = "audio.webm") -> 
         "xi-api-key": ELEVENLABS_API_KEY,
     }
 
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "webm"
+    content_type = {"mp4": "audio/mp4", "m4a": "audio/mp4", "ogg": "audio/ogg"}.get(ext, "audio/webm")
     files = {
-        "file": (filename, audio_bytes, "audio/webm"),
+        "file": (filename, audio_bytes, content_type),
     }
     data = {
         "model_id": "scribe_v2",

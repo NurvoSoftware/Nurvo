@@ -8,6 +8,17 @@ import { transcribeAudio } from '@/services/apiService'
 let mediaRecorder: MediaRecorder | null = null
 let audioChunks: Blob[] = []
 let isListening = false
+let activeMimeType = ''
+
+function detectMimeType(): string {
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+  ]
+  return candidates.find((t) => MediaRecorder.isTypeSupported(t)) ?? ''
+}
 
 /**
  * Check if the browser supports MediaRecorder (required for recording).
@@ -46,7 +57,8 @@ export async function start(
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
     audioChunks = []
-    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+    activeMimeType = detectMimeType()
+    mediaRecorder = new MediaRecorder(stream, activeMimeType ? { mimeType: activeMimeType } : {})
 
     mediaRecorder.ondataavailable = (event: BlobEvent) => {
       if (event.data.size > 0) {
@@ -63,7 +75,8 @@ export async function start(
         return
       }
 
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
+      const blobType = activeMimeType || mediaRecorder?.mimeType || 'audio/webm'
+      const audioBlob = new Blob(audioChunks, { type: blobType })
       audioChunks = []
 
       try {
