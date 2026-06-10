@@ -13,6 +13,9 @@ env/
 .env.local
 .env.*.local
 
+# SQL
+*.sql
+
 # General
 .DS_Store
 .vscode/

@@ -68,6 +68,17 @@ ELEVENLABS_TTS_MODEL: str = os.getenv("ELEVENLABS_TTS_MODEL", "eleven_flash_v2_5
 
 GAME_TIME_LIMIT: int = int(os.getenv("GAME_TIME_LIMIT", "480"))
 
+DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+
+GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI: str = os.getenv(
+    "GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback"
+)
+FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "")
+JWT_EXPIRE_DAYS: int = int(os.getenv("JWT_EXPIRE_DAYS", "7"))
+
 
 def _parse_thresholds(raw: str) -> list[int]:
     """Parse comma-separated idle thresholds into a list of positive ints."""

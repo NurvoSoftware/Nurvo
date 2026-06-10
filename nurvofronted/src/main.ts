@@ -9,6 +9,7 @@ import { definePreset } from '@primeuix/themes'
 
 import App from './App.vue'
 import router from './router'
+import { useAuthStore } from './stores/authStore'
 
 const NurvoPreset = definePreset(Aura, {
   semantic: {
@@ -43,4 +44,6 @@ app.use(PrimeVue, {
   },
 })
 
-app.mount('#app')
+// Restore login state from localStorage before first render
+const authStore = useAuthStore()
+authStore.init().then(() => app.mount('#app'))

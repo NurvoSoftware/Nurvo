@@ -165,8 +165,11 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000)
 
+      const token = localStorage.getItem('nurvo_token')
+      const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
+
       const response = await fetch(`${API_BASE}${url}`, {
-        headers: { 'Content-Type': 'application/json', ...options.headers },
+        headers: { 'Content-Type': 'application/json', ...authHeader, ...options.headers },
         ...options,
         signal: controller.signal,
       })

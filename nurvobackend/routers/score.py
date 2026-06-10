@@ -1,10 +1,13 @@
 """Score evaluation router."""
 
+import asyncio
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from models.chat import SessionStatus
 from models.score import ScoreResult
+from persist import save_completed_session
 from services.scoring_engine import evaluate_session
 from session_store import get_session, update_session
 
@@ -28,11 +31,12 @@ async def evaluate(request: ScoreEvaluateRequest) -> ScoreResult:
             detail=f"Session status must be 'scoring', got '{session.status.value}'",
         )
 
-    # Run AI evaluation
     score_result = await evaluate_session(session)
 
-    # Update session status to completed
     session.status = SessionStatus.COMPLETED
     update_session(session)
+
+    # Persist to DB in the background — does not block the API response
+    asyncio.create_task(save_completed_session(session, score_result))
 
     return score_result

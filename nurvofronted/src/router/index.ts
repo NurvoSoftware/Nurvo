@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 import HomeView from '../views/HomeView.vue'
+
+const PROTECTED = new Set(['level-select', 'briefing', 'scene', 'record', 'dashboard'])
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,6 +11,16 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
+    },
+    {
+      path: '/auth/callback',
+      name: 'auth-callback',
+      component: () => import('../views/AuthCallbackView.vue'),
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/LoginView.vue'),
     },
     {
       path: '/briefing',
@@ -35,6 +48,16 @@ const router = createRouter({
       component: () => import('../views/DashboardView.vue'),
     },
   ],
+})
+
+router.beforeEach((to) => {
+  if (PROTECTED.has(to.name as string)) {
+    const authStore = useAuthStore()
+    if (!authStore.isAuthenticated) {
+      sessionStorage.setItem('nurvo_redirect', to.fullPath)
+      return { name: 'login' }
+    }
+  }
 })
 
 export default router

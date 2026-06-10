@@ -60,8 +60,32 @@ Backend vars live in `nurvobackend/.env` (template: `nurvobackend/.env.example`)
 | `PROACTIVE_COOLDOWN_SECONDS` | no | `10` | Min gap between proactive events |
 | `PROACTIVE_ENDGAME_GUARD_SECONDS` | no | `30` | Suppress proactive speech near timeout |
 | `RECONNECT_GRACE_SECONDS` | no | `10` | WebSocket reconnect grace window |
+| `DATABASE_URL` | yes | — | asyncpg connection string, e.g. `postgresql+asyncpg://postgres:1234@localhost:5432/nurvo` |
+| `GOOGLE_CLIENT_ID` | yes | — | OAuth 2.0 client ID from Google Cloud Console |
+| `GOOGLE_CLIENT_SECRET` | yes | — | OAuth 2.0 client secret from Google Cloud Console |
+| `GOOGLE_REDIRECT_URI` | yes | `http://localhost:8000/api/auth/google/callback` | Must match an Authorized redirect URI in Google Cloud Console |
+| `FRONTEND_URL` | yes | `http://localhost:5173` | Used to build the post-OAuth redirect back to the SPA |
+| `JWT_SECRET_KEY` | yes | — | Random secret for signing JWTs — change before deploy |
+| `JWT_EXPIRE_DAYS` | no | `7` | JWT lifetime in days |
 
 Frontend vars (`nurvofronted/.env.development`): `VITE_USE_MOCK_API`.
+
+## Google Cloud Console setup (one-time)
+
+1. Go to **APIs & Services → Credentials** in Google Cloud Console.
+2. Create or open an OAuth 2.0 Client ID (Web application).
+3. Add `http://localhost:8000/api/auth/google/callback` to **Authorized redirect URIs**.
+4. Copy the Client ID and Client Secret into `nurvobackend/.env`.
+
+## Database setup (one-time)
+
+```sql
+-- Run in pgAdmin or psql against the 'nurvo' database
+-- Import nurvo_example.sql to create the schema, then apply any pending migrations:
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password_hash character varying(255);
+ALTER TABLE public.game_sessions ALTER COLUMN user_id DROP NOT NULL;
+ALTER TABLE public.game_sessions ADD COLUMN IF NOT EXISTS chat_messages jsonb DEFAULT '[]'::jsonb NOT NULL;
+```
 
 ## Common tasks
 

@@ -8,6 +8,51 @@
 > initial system record, not authored at decision time — dates are approximate to the commits
 > that introduced each choice. Refine when the original authors confirm details.
 
+## 2026-06-11 — JWT auth with Google OAuth + email/password; token in URL hash
+
+**Context:** The game needs to know who is playing (for session persistence and future progress
+tracking). We wanted to support Google Sign-In as the primary method but also email/password for
+accounts without Google. The login page should be a dedicated route, not a direct browser
+redirect to Google.
+
+**Decision:** All auth entry points (`startGame()`, NavBar button, route guard) push to `/login`,
+a dedicated page where the user chooses their method. Google OAuth uses the authorization code
+flow (server-side exchange in FastAPI, never exposes the secret to the browser). The resulting
+JWT is passed back to the SPA in the URL hash (`#token=...`) rather than a query param so it is
+never sent to any server in a request log. `AuthCallbackView` reads the hash, moves the token to
+`localStorage`, and navigates to the original destination.
+
+**Alternatives considered:**
+- HttpOnly cookie instead of localStorage JWT — better CSRF protection, but requires a
+  same-origin setup; deferred to post-MVP when deployment domain is settled.
+- Redirect directly to Google on first protected-route access — rejected: no room to add
+  email/password or future methods without another refactor.
+
+**Consequences:**
+- Single `/login` page is the universal auth wall; adding new login methods only touches that
+  one view and the backend auth router.
+- JWT in `localStorage` is accessible to JavaScript (XSS risk) — acceptable for MVP, revisit
+  when the security hardening spec (`openspec/changes/harden-web-security`) ships.
+
+## 2026-06-11 — Best-effort async DB persistence for completed sessions
+
+**Context:** Sessions are in-memory; if the backend restarts, all history is lost. We want
+completed sessions written to Postgres without blocking the score API response.
+
+**Decision:** After `POST /api/score/evaluate` finishes, `asyncio.create_task()` fires
+`persist.save_completed_session()` in the background. The API returns the scorecard immediately;
+the DB write happens asynchronously. `save_completed_session` wraps everything in a single
+try/except — if it fails, the user's scorecard is still returned and an error is logged.
+
+**Alternatives considered:**
+- Blocking DB write before returning — rejected: adds latency to the critical score response path.
+- Queue (e.g. Redis) — rejected: operational overhead before persistence is even proven useful.
+
+**Consequences:**
+- Score API stays fast; DB write failures are silent to the user.
+- A crash immediately after score evaluation can lose the session record — acceptable at MVP scale.
+- Revisit when: sessions must be reliably queryable (progress history, analytics).
+
 ## 2026-06-08 — Removed digiRunner; frontend talks to FastAPI directly
 
 **Context:** Every request used to route Browser → nginx → digiRunner → FastAPI. The gateway's

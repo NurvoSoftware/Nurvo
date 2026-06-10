@@ -1,3 +1,10 @@
+export interface User {
+  id: string
+  email: string
+  name: string | null
+  picture_url: string | null
+}
+
 export interface PatientProfile {
   name: string
   age: number

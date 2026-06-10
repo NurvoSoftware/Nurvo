@@ -18,9 +18,11 @@ Docker Compose stack.
 | Component | Role | Location |
 |-----------|------|----------|
 | Frontend SPA | Vue 3 + Vite + TS game UI (6-step flow, chat, dashboard) | `nurvofronted/` (nginx, host `:8080`→`:80`) |
-| Backend API | FastAPI app: scenario gen, chat loop, scoring, STT | `nurvobackend/` (host `:8000`) |
+| Backend API | FastAPI app: scenario gen, chat loop, scoring, STT, auth | `nurvobackend/` (host `:8000`) |
+| Auth router | Google OAuth 2.0 + email/password login; issues JWT | `nurvobackend/routers/auth.py` |
 | Conversation engine | NPC replies, family interjections, idle→proactive speech | `nurvobackend/services/conversation_engine.py` |
-| Session store | In-memory game state (no DB) | `nurvobackend/session_store.py` |
+| Session store | In-memory game state (lost on restart) | `nurvobackend/session_store.py` |
+| DB persistence | asyncpg pool; best-effort write of completed sessions | `nurvobackend/db.py`, `nurvobackend/persist.py` |
 | External AI services | LLM, image, voice (see table below) | called from `nurvobackend/services/` |
 
 ## Data flow
@@ -55,10 +57,14 @@ Game lifecycle (the user journey the data follows):
 | OpenAI DALL·E 3 | Async ward background image generation |
 | ElevenLabs TTS (`eleven_flash_v2_5`) | NPC voices, gender-aware per role |
 | ElevenLabs Scribe | Nurse speech-to-text (Mandarin) |
+| Google OAuth 2.0 | User authentication (authorization code flow) |
+| PostgreSQL (local) | Completed session persistence; users table |
 
 ## What is intentionally out of scope
 
-- **Persistence & auth** — sessions live in memory only; they are lost on backend restart.
-  Supabase (auth + storage) is *planned*, not built. No user accounts, no migrations.
+- **In-memory sessions** — `GameSession` objects are still stored in-process and lost on restart.
+  DB persistence only records *completed* sessions (best-effort, non-blocking).
+- **User registration** — accounts exist only via Google OAuth or manually seeded `password_hash`.
+  Self-service sign-up is not built yet.
 - **Localization** — Traditional Chinese only.
 - **Native mobile** — web/browser only (responsive layout); no iOS/Android/desktop client.

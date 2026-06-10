@@ -1,14 +1,32 @@
 """Nurvo Backend - FastAPI application entry point."""
 
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import scenario, chat, record, score, stt
+import db
+from routers import auth, scenario, chat, record, score, stt
+
+log = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        await db.init_pool()
+    except Exception as exc:
+        log.warning("DB unavailable, running without persistence: %s", exc)
+    yield
+    await db.close_pool()
+
 
 app = FastAPI(
     title="Nurvo API",
     description="護理溝通情境遊戲 MVP 後端 API",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -19,6 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/api")
 app.include_router(scenario.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(record.router, prefix="/api")
