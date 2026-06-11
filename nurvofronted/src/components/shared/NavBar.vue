@@ -18,10 +18,10 @@ function handleLogout() {
 
 <template>
   <nav class="topbar">
-    <div class="brand">
+    <router-link to="/" class="brand">
       <img src="/Nurvo_logo.png" class="brand-logo-img" alt="Nurvo" />
       <span class="brand-name">Nurvo</span>
-    </div>
+    </router-link>
 
     <div class="nav-auth">
       <template v-if="authStore.isAuthenticated">
@@ -33,6 +33,7 @@ function handleLogout() {
           referrerpolicy="no-referrer"
         />
         <span class="user-name">{{ authStore.user?.name }}</span>
+        <span class="credits-badge">{{ authStore.user?.credits ?? 0 }} 點</span>
         <button class="btn-logout" @click="handleLogout">登出</button>
       </template>
       <template v-else>
@@ -58,6 +59,7 @@ function handleLogout() {
   display: flex;
   align-items: center;
   gap: 10px;
+  text-decoration: none;
 }
 
 .brand-logo-img {
@@ -95,6 +97,17 @@ function handleLogout() {
   max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.credits-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 4px 12px;
   white-space: nowrap;
 }
 

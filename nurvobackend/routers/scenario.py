@@ -1,14 +1,18 @@
 """Scenario generation router."""
 
+import uuid
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from constants import CREDITS_PER_GAME
+from db import get_pool
 from models.chat import GameSession, SessionStatus
 from models.scenario import Scenario
 from prompts.patient_conversation import build_patient_prompt
 from prompts.family_conversation import build_family_prompt
+from routers.deps import get_current_user
 from services.scenario_generator import generate_scenario, get_background_image_status
 from session_store import create_session
 
@@ -37,8 +41,27 @@ class _ScenarioResponse(Scenario):
 
 
 @router.post("/generate")
-async def generate_scenario_endpoint(body: GenerateScenarioRequest) -> dict:
-    """Generate a new scenario and create a game session."""
+async def generate_scenario_endpoint(
+    body: GenerateScenarioRequest,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Generate a new scenario and create a game session. Deducts credits on success."""
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            UPDATE public.users
+            SET credits = credits - $1
+            WHERE id = $2 AND credits >= $1
+            RETURNING credits
+            """,
+            CREDITS_PER_GAME,
+            uuid.UUID(current_user["id"]),
+        )
+    if row is None:
+        raise HTTPException(status_code=402, detail="點數不足")
+
+    credits_remaining = row["credits"]
     session_id, scenario = await generate_scenario(body.difficulty)
 
     # Build system prompts for patient and family NPCs
@@ -90,4 +113,5 @@ async def generate_scenario_endpoint(body: GenerateScenarioRequest) -> dict:
     return {
         "session_id": session_id,
         "scenario": scenario_dict,
+        "credits_remaining": credits_remaining,
     }
