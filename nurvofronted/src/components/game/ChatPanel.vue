@@ -51,7 +51,64 @@ const familyMembers = computed(() => scenarioStore.scenario?.family_members ?? [
 
 const inputText = ref<string>('')
 const messagesContainer = ref<HTMLElement | null>(null)
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const isRecording = ref<boolean>(false)
+
+// ── @mention state ────────────────────────────────────
+const showMentionMenu = ref(false)
+const mentionQuery = ref('')
+
+const ALL_OPTION = { id: 'all', name: 'all', label: '呼叫全部角色', gender: '' }
+
+const allCharacters = computed(() => {
+  const scenario = scenarioStore.scenario
+  if (!scenario) return []
+  return [
+    { id: 'patient', name: scenario.patient_profile.name, label: '病患', gender: scenario.patient_profile.gender },
+    ...(scenario.family_members ?? []).map((fm, i) => ({
+      id: `family_${i}`, name: fm.name, label: fm.relationship, gender: fm.gender,
+    })),
+  ]
+})
+
+const filteredCharacters = computed(() => {
+  const q = mentionQuery.value
+  const chars = q
+    ? allCharacters.value.filter(c => c.name.includes(q) || c.label.includes(q))
+    : allCharacters.value
+  const showAll = !q || 'all'.includes(q.toLowerCase()) || '全部'.includes(q)
+  return showAll ? [ALL_OPTION, ...chars] : chars
+})
+
+function handleInput(): void {
+  const text = inputText.value
+  const lastAt = text.lastIndexOf('@')
+  if (lastAt !== -1 && !text.slice(lastAt + 1).includes(' ')) {
+    mentionQuery.value = text.slice(lastAt + 1)
+    showMentionMenu.value = true
+  } else {
+    showMentionMenu.value = false
+    mentionQuery.value = ''
+  }
+}
+
+function selectMention(char: { id: string; name: string }): void {
+  const insertText = char.id === 'all' ? '@all ' : `@${char.name} `
+  const lastAt = inputText.value.lastIndexOf('@')
+  inputText.value = lastAt !== -1
+    ? inputText.value.slice(0, lastAt) + insertText
+    : inputText.value + insertText
+  showMentionMenu.value = false
+  mentionQuery.value = ''
+  nextTick(() => {
+    if (textareaRef.value) {
+      textareaRef.value.focus()
+      textareaRef.value.selectionStart = inputText.value.length
+      textareaRef.value.selectionEnd = inputText.value.length
+    }
+  })
+}
+// ─────────────────────────────────────────────────────
 const isTranscribing = ref<boolean>(false)
 const speechSupported: boolean = speechService.isSupported()
 const playedAudioMessageIds = new Set<string>()
@@ -105,7 +162,16 @@ function handleSend(): void {
   const content = inputText.value.trim()
   if (!content) return
 
-  sendMessage(chatStore.currentTarget, content)
+  let targets: ('patient' | FamilySender)[]
+  if (content.includes('@all')) {
+    targets = allCharacters.value.map(c => c.id as 'patient' | FamilySender)
+  } else {
+    const nameToId = new Map(allCharacters.value.map(c => [c.name, c.id]))
+    const unique = [...new Set(
+      [...content.matchAll(/@(\S+)/g)].map(m => nameToId.get(m[1])).filter((id): id is string => !!id)
+    )]
+    targets = unique.length > 0 ? (unique as ('patient' | FamilySender)[]) : [chatStore.currentTarget]
+  }
 
   chatStore.addMessage({
     id: `nurse-${Date.now()}`,
@@ -116,6 +182,7 @@ function handleSend(): void {
     is_interjection: false,
   })
 
+  targets.forEach(t => sendMessage(t, content))
   inputText.value = ''
   markTypingEnd()
 }
@@ -266,14 +333,34 @@ onBeforeUnmount(() => {
 
     <!-- Input area -->
     <div class="input-area">
+
+      <!-- @mention dropdown -->
+      <div v-if="showMentionMenu && filteredCharacters.length > 0" class="mention-menu">
+        <button
+          v-for="char in filteredCharacters"
+          :key="char.id"
+          class="mention-item"
+          :class="{ 'mention-item--all': char.id === 'all' }"
+          @mousedown.prevent="selectMention(char)"
+        >
+          <span>{{ char.id === 'all' ? '👥' : genderAvatar(char.gender) }}</span>
+          <span class="mention-name">{{ char.id === 'all' ? '@all' : char.name }}</span>
+          <span class="mention-label">{{ char.label }}</span>
+        </button>
+      </div>
+
       <div class="input-row">
         <textarea
+          ref="textareaRef"
           v-model="inputText"
           :placeholder="placeholder"
           :disabled="disabled"
           rows="1"
           class="input-textarea"
+          @input="handleInput"
           @keydown.enter.exact="handleEnterKey"
+          @keydown.escape="showMentionMenu = false"
+          @blur="() => setTimeout(() => { showMentionMenu = false }, 150)"
         ></textarea>
         <button
           v-if="speechSupported"
@@ -457,6 +544,7 @@ onBeforeUnmount(() => {
 
 /* Input area */
 .input-area {
+  position: relative;
   border-top: 1px solid var(--nurvo-border-light);
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.2);
@@ -465,6 +553,64 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   gap: 8px;
+}
+
+/* @mention dropdown */
+.mention-menu {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 12px;
+  right: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+  z-index: 50;
+}
+
+.mention-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  font-size: 13px;
+  color: #1e293b;
+  font-family: var(--nurvo-font-family);
+  transition: background 0.12s;
+}
+
+.mention-item:last-child {
+  border-bottom: none;
+}
+
+.mention-item:hover {
+  background: #f0f9ff;
+}
+
+.mention-item--all {
+  background: #f8fafc;
+  font-weight: 700;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mention-item--all:hover {
+  background: #eff6ff;
+}
+
+.mention-name {
+  font-weight: 600;
+}
+
+.mention-label {
+  color: #64748b;
+  font-size: 11px;
+  margin-left: auto;
 }
 
 .input-row {
