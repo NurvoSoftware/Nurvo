@@ -13,7 +13,7 @@ import {
 } from '@/services/audioService'
 import * as speechService from '@/services/speechService'
 import { isFamilySender, familyDisplayIndex, genderAvatar } from '@/types/game'
-import type { FamilySender } from '@/types/game'
+import type { FamilySender, TargetId } from '@/types/game'
 import ChatBubble from './ChatBubble.vue'
 
 const TYPING_DEBOUNCE_MS = 1000
@@ -58,7 +58,7 @@ const isRecording = ref<boolean>(false)
 const showMentionMenu = ref(false)
 const mentionQuery = ref('')
 
-const ALL_OPTION = { id: 'all', name: 'all', label: '呼叫全部角色', gender: '' }
+const ALL_OPTION = { id: 'all', name: '全部', label: '呼叫全部角色', gender: '' }
 
 const allCharacters = computed(() => {
   const scenario = scenarioStore.scenario
@@ -80,6 +80,14 @@ const filteredCharacters = computed(() => {
   return showAll ? [ALL_OPTION, ...chars] : chars
 })
 
+// Close the mention menu shortly after blur, leaving time for a mousedown
+// selection on a menu item to register first.
+function handleBlur(): void {
+  setTimeout(() => {
+    showMentionMenu.value = false
+  }, 150)
+}
+
 function handleInput(): void {
   const text = inputText.value
   const lastAt = text.lastIndexOf('@')
@@ -92,12 +100,14 @@ function handleInput(): void {
   }
 }
 
-function selectMention(char: { id: string; name: string }): void {
-  const insertText = char.id === 'all' ? '@all ' : `@${char.name} `
+function selectMention(char: { id: string }): void {
+  chatStore.addTarget(char.id as TargetId)
+  // Strip the in-progress "@query" (last @ → end) — the chip now holds the target,
+  // so the message body stays clean.
   const lastAt = inputText.value.lastIndexOf('@')
-  inputText.value = lastAt !== -1
-    ? inputText.value.slice(0, lastAt) + insertText
-    : inputText.value + insertText
+  if (lastAt !== -1) {
+    inputText.value = inputText.value.slice(0, lastAt)
+  }
   showMentionMenu.value = false
   mentionQuery.value = ''
   nextTick(() => {
@@ -108,6 +118,27 @@ function selectMention(char: { id: string; name: string }): void {
     }
   })
 }
+
+function toggleTarget(id: TargetId): void {
+  chatStore.toggleTarget(id)
+}
+
+function removeTarget(id: TargetId): void {
+  chatStore.removeTarget(id)
+}
+
+// Derive chip display (name/avatar) from the store's id list + scenario data.
+const selectedChips = computed(() => {
+  return chatStore.selectedTargetIds.map((id) => {
+    if (id === 'all') return { id, name: '全部', gender: '' }
+    const c = allCharacters.value.find((ch) => ch.id === id)
+    return { id, name: c?.name ?? id, gender: c?.gender ?? '' }
+  })
+})
+
+const targetLabel = computed(() =>
+  selectedChips.value.length ? selectedChips.value.map((c) => c.name).join('、') : '病患',
+)
 // ─────────────────────────────────────────────────────
 const isTranscribing = ref<boolean>(false)
 const speechSupported: boolean = speechService.isSupported()
@@ -130,13 +161,8 @@ const typingLabel = computed<string>(() => {
 })
 
 const placeholder = computed<string>(() => {
-  if (chatStore.currentTarget === 'patient') return '輸入訊息給病患...'
-  if (isFamilySender(chatStore.currentTarget)) {
-    const idx = familyDisplayIndex(chatStore.currentTarget)
-    const name = familyMembers.value[idx]?.name ?? `家屬${idx + 1}`
-    return `輸入訊息給${name}...`
-  }
-  return '輸入訊息...'
+  if (selectedChips.value.length === 0) return '輸入訊息...（預設對病患說話）'
+  return `輸入訊息給${targetLabel.value}...`
 })
 
 const typingAvatar = computed<string>(() => {
@@ -162,15 +188,14 @@ function handleSend(): void {
   const content = inputText.value.trim()
   if (!content) return
 
+  const ids = chatStore.selectedTargetIds
   let targets: ('patient' | FamilySender)[]
-  if (content.includes('@all')) {
+  if (ids.includes('all')) {
     targets = allCharacters.value.map(c => c.id as 'patient' | FamilySender)
+  } else if (ids.length > 0) {
+    targets = ids.filter((id): id is 'patient' | FamilySender => id !== 'all')
   } else {
-    const nameToId = new Map(allCharacters.value.map(c => [c.name, c.id]))
-    const unique = [...new Set(
-      [...content.matchAll(/@(\S+)/g)].map(m => nameToId.get(m[1])).filter((id): id is string => !!id)
-    )]
-    targets = unique.length > 0 ? (unique as ('patient' | FamilySender)[]) : [chatStore.currentTarget]
+    targets = ['patient']
   }
 
   chatStore.addMessage({
@@ -194,10 +219,6 @@ function handleEnterKey(event: KeyboardEvent): void {
   }
   event.preventDefault()
   handleSend()
-}
-
-function switchTarget(target: 'patient' | FamilySender): void {
-  chatStore.setTarget(target)
 }
 
 function goToRecord(): void {
@@ -285,8 +306,8 @@ onBeforeUnmount(() => {
     <div class="tab-bar">
       <button
         class="tab-btn"
-        :class="{ 'tab-btn--active': chatStore.currentTarget === 'patient' }"
-        @click="switchTarget('patient')"
+        :class="{ 'tab-btn--active': chatStore.selectedTargetIds.includes('patient') }"
+        @click="toggleTarget('patient')"
       >
         &#x1F9D3; 病患
       </button>
@@ -294,8 +315,8 @@ onBeforeUnmount(() => {
         v-for="(fm, idx) in familyMembers"
         :key="idx"
         class="tab-btn"
-        :class="{ 'tab-btn--active': chatStore.currentTarget === `family_${idx}` }"
-        @click="switchTarget(`family_${idx}` as FamilySender)"
+        :class="{ 'tab-btn--active': chatStore.selectedTargetIds.includes(`family_${idx}` as TargetId) }"
+        @click="toggleTarget(`family_${idx}` as TargetId)"
       >
         {{ genderAvatar(fm.gender) }} {{ fm.name }}
       </button>
@@ -304,7 +325,7 @@ onBeforeUnmount(() => {
     <!-- Messages area -->
     <div ref="messagesContainer" class="messages-area">
       <div v-if="filteredMessages.length === 0" class="empty-state">
-        <p>開始與{{ chatStore.currentTarget === 'patient' ? '病患' : placeholder.replace('輸入訊息給', '').replace('...', '') }}對話</p>
+        <p>開始與{{ targetLabel }}對話</p>
         <p class="empty-hint">輸入訊息開始溝通評估</p>
       </div>
 
@@ -349,6 +370,15 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
+      <!-- Selected target chips -->
+      <div v-if="selectedChips.length > 0" class="target-chips">
+        <span v-for="chip in selectedChips" :key="chip.id" class="target-chip">
+          <span class="chip-avatar">{{ chip.id === 'all' ? '👥' : genderAvatar(chip.gender) }}</span>
+          <span class="chip-name">{{ chip.name }}</span>
+          <button class="chip-remove" :aria-label="`移除 ${chip.name}`" @click="removeTarget(chip.id)">&times;</button>
+        </span>
+      </div>
+
       <div class="input-row">
         <textarea
           ref="textareaRef"
@@ -360,7 +390,7 @@ onBeforeUnmount(() => {
           @input="handleInput"
           @keydown.enter.exact="handleEnterKey"
           @keydown.escape="showMentionMenu = false"
-          @blur="() => setTimeout(() => { showMentionMenu = false }, 150)"
+          @blur="handleBlur"
         ></textarea>
         <button
           v-if="speechSupported"
@@ -611,6 +641,55 @@ onBeforeUnmount(() => {
   color: #64748b;
   font-size: 11px;
   margin-left: auto;
+}
+
+/* Selected target chips */
+.target-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.target-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 8px;
+  border-radius: 999px;
+  background: var(--nurvo-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--nurvo-font-family);
+}
+
+.chip-avatar {
+  font-size: 12px;
+}
+
+.chip-name {
+  line-height: 1;
+}
+
+.chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.chip-remove:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .input-row {

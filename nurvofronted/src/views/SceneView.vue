@@ -54,7 +54,9 @@ const latestNpcMessage = computed<ChatMessage | null>(() => {
 })
 
 function handleSelectTarget(target: 'patient' | FamilySender): void {
-  chatStore.setTarget(target)
+  // Clicking a character in the scene toggles its chip — same selection state
+  // the chat tab buttons and @ dropdown feed.
+  chatStore.toggleTarget(target)
 }
 
 function handleTimerExpired(): void {

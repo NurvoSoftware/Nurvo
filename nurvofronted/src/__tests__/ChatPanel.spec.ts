@@ -102,15 +102,15 @@ describe('ChatPanel', () => {
     chatStore.setConnected(true)
   })
 
-  it('switches to the clicked family member and sends to that target', async () => {
+  it('toggles a family chip via the tab button and sends to that target', async () => {
     const wrapper = mount(ChatPanel)
     const chatStore = useChatStore()
 
     const tabButtons = wrapper.findAll('button.tab-btn')
-    await tabButtons[2]!.trigger('click')
+    await tabButtons[2]!.trigger('click') // family_1 = 林小姐
 
-    expect(chatStore.currentTarget).toBe('family_1')
-    expect(wrapper.find('textarea').attributes('placeholder')).toBe('輸入訊息給林小姐...')
+    expect(chatStore.selectedTargetIds).toEqual(['family_1'])
+    expect(wrapper.find('.target-chip').text()).toContain('林小姐')
 
     await wrapper.find('textarea').setValue('請問現在可以說明一下嗎？')
     await wrapper.find('button.input-btn--send').trigger('click')
@@ -121,6 +121,94 @@ describe('ChatPanel', () => {
       sender: 'nurse',
       content: '請問現在可以說明一下嗎？',
     })
+  })
+
+  it('toggling the same tab button twice removes the chip', async () => {
+    const wrapper = mount(ChatPanel)
+    const chatStore = useChatStore()
+
+    const tab = wrapper.findAll('button.tab-btn')[2]!
+    await tab.trigger('click')
+    expect(chatStore.selectedTargetIds).toEqual(['family_1'])
+    await tab.trigger('click')
+    expect(chatStore.selectedTargetIds).toEqual([])
+    expect(wrapper.findAll('.target-chip')).toHaveLength(0)
+  })
+
+  it('selecting from the @ dropdown adds a chip and strips the @query from the text', async () => {
+    const wrapper = mount(ChatPanel)
+    const textarea = wrapper.find('textarea')
+
+    await textarea.setValue('您好嗎 @林小')
+    await textarea.trigger('input')
+
+    const item = wrapper.findAll('.mention-item').find((i) => i.text().includes('林小姐'))
+    expect(item).toBeTruthy()
+    await item!.trigger('mousedown')
+
+    expect(wrapper.find('.target-chip').text()).toContain('林小姐')
+    expect((textarea.element as HTMLTextAreaElement).value).toBe('您好嗎 ')
+  })
+
+  it('removing a chip drops the target without touching the message text', async () => {
+    const wrapper = mount(ChatPanel)
+    const chatStore = useChatStore()
+
+    await wrapper.findAll('button.tab-btn')[0]!.trigger('click') // patient
+    await wrapper.find('textarea').setValue('一些文字')
+    expect(chatStore.selectedTargetIds).toEqual(['patient'])
+
+    await wrapper.find('.target-chip .chip-remove').trigger('click')
+
+    expect(chatStore.selectedTargetIds).toEqual([])
+    expect((wrapper.find('textarea').element as HTMLTextAreaElement).value).toBe('一些文字')
+  })
+
+  it('sends clean content (no @ token) once per selected target', async () => {
+    const wrapper = mount(ChatPanel)
+
+    await wrapper.findAll('button.tab-btn')[0]!.trigger('click') // patient
+    await wrapper.findAll('button.tab-btn')[2]!.trigger('click') // family_1
+    await wrapper.find('textarea').setValue('請問哪裡痛？')
+    await wrapper.find('button.input-btn--send').trigger('click')
+
+    expect(sendMessage).toHaveBeenCalledTimes(2)
+    expect(sendMessage).toHaveBeenCalledWith('patient', '請問哪裡痛？')
+    expect(sendMessage).toHaveBeenCalledWith('family_1', '請問哪裡痛？')
+    for (const call of (sendMessage as ReturnType<typeof vi.fn>).mock.calls) {
+      expect(call[1]).not.toContain('@')
+    }
+  })
+
+  it('the 全部 broadcast chip sends to the patient and every family member', async () => {
+    const wrapper = mount(ChatPanel)
+    const textarea = wrapper.find('textarea')
+
+    await textarea.setValue('@')
+    await textarea.trigger('input')
+    const allItem = wrapper.findAll('.mention-item').find((i) => i.text().includes('全部') || i.text().includes('@all'))
+    await allItem!.trigger('mousedown')
+
+    expect(wrapper.findAll('.target-chip')).toHaveLength(1)
+
+    await textarea.setValue('大家好')
+    await wrapper.find('button.input-btn--send').trigger('click')
+
+    expect(sendMessage).toHaveBeenCalledTimes(4)
+    expect(sendMessage).toHaveBeenCalledWith('patient', '大家好')
+    expect(sendMessage).toHaveBeenCalledWith('family_0', '大家好')
+    expect(sendMessage).toHaveBeenCalledWith('family_1', '大家好')
+    expect(sendMessage).toHaveBeenCalledWith('family_2', '大家好')
+  })
+
+  it('defaults to the patient when no chip is selected', async () => {
+    const wrapper = mount(ChatPanel)
+
+    await wrapper.find('textarea').setValue('您好')
+    await wrapper.find('button.input-btn--send').trigger('click')
+
+    expect(sendMessage).toHaveBeenCalledTimes(1)
+    expect(sendMessage).toHaveBeenCalledWith('patient', '您好')
   })
 
   it('auto-plays audio when TTS arrives after the NPC text', async () => {

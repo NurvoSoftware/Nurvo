@@ -1,12 +1,14 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { ChatMessage, FamilySender } from '@/types/game'
+import type { ChatMessage, FamilySender, TargetId } from '@/types/game'
 
 export const useChatStore = defineStore('chat', () => {
   const messages = ref<ChatMessage[]>([])
   const isConnected = ref(false)
   const typingIndicator = ref<'patient' | FamilySender | null>(null)
-  const currentTarget = ref<'patient' | FamilySender>('patient')
+  // The conversation target(s) the nurse is addressing, shown as chips.
+  // Fed by the @ dropdown, the tab buttons, and scene-character clicks.
+  const selectedTargetIds = ref<TargetId[]>([])
   const errorMessage = ref<string>('')
 
   function addMessage(message: ChatMessage) {
@@ -20,8 +22,35 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  function setTarget(target: 'patient' | FamilySender) {
-    currentTarget.value = target
+  // Add a target (de-duped). Choosing 'all' collapses to a single broadcast
+  // chip; choosing an individual drops any existing 'all'.
+  function addTarget(id: TargetId) {
+    if (id === 'all') {
+      selectedTargetIds.value = ['all']
+      return
+    }
+    const without = selectedTargetIds.value.filter((t) => t !== 'all')
+    selectedTargetIds.value = without.includes(id) ? without : [...without, id]
+  }
+
+  // Toggle a target on/off (used by tab buttons and scene clicks).
+  function toggleTarget(id: TargetId) {
+    if (id === 'all') {
+      selectedTargetIds.value = selectedTargetIds.value.includes('all') ? [] : ['all']
+      return
+    }
+    const without = selectedTargetIds.value.filter((t) => t !== 'all')
+    selectedTargetIds.value = without.includes(id)
+      ? without.filter((t) => t !== id)
+      : [...without, id]
+  }
+
+  function removeTarget(id: TargetId) {
+    selectedTargetIds.value = selectedTargetIds.value.filter((t) => t !== id)
+  }
+
+  function clearTargets() {
+    selectedTargetIds.value = []
   }
 
   function clearMessages() {
@@ -50,7 +79,7 @@ export const useChatStore = defineStore('chat', () => {
     messages.value = []
     isConnected.value = false
     typingIndicator.value = null
-    currentTarget.value = 'patient'
+    selectedTargetIds.value = []
     errorMessage.value = ''
   }
 
@@ -58,11 +87,14 @@ export const useChatStore = defineStore('chat', () => {
     messages,
     isConnected,
     typingIndicator,
-    currentTarget,
+    selectedTargetIds,
     errorMessage,
     addMessage,
     setMessageAudio,
-    setTarget,
+    addTarget,
+    toggleTarget,
+    removeTarget,
+    clearTargets,
     clearMessages,
     setConnected,
     setTyping,

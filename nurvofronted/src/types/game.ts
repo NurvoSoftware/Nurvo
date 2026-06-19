@@ -57,6 +57,10 @@ export interface Scenario {
 
 export type FamilySender = 'family_0' | 'family_1' | 'family_2'
 
+// A conversation target the nurse can select. 'all' is a UI-only broadcast
+// sentinel that expands to patient + every family member when a message is sent.
+export type TargetId = 'patient' | FamilySender | 'all'
+
 export function isFamilySender(s: string): s is FamilySender {
   return s === 'family_0' || s === 'family_1' || s === 'family_2'
 }
