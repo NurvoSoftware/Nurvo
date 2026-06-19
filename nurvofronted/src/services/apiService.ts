@@ -32,6 +32,7 @@ function createMockScenarioResponse(difficulty: ScenarioDifficulty = 'medium'): 
 
   return {
     session_id: randomId('mock-session'),
+    credits_remaining: 999,
     scenario: {
       id: randomId('mock-scenario'),
       patient_profile: {
