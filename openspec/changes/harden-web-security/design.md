@@ -60,11 +60,11 @@ The middleware sets `Cache-Control: no-store` + `Pragma: no-cache` on every `/ap
 - **Why:** no API response in this app benefits from caching, and a blanket rule can't be forgotten when a future sensitive endpoint (e.g. the OAuth flow seen in prod) is added — directly pre-empts finding #7.
 - **Alternative considered:** per-endpoint `no-store` — rejected: fragile, easy to miss a new endpoint.
 
-### D5 — SRI via attributes, not by self-hosting
-Add `integrity="sha384-…"` + `crossorigin="anonymous"` to the Google Fonts `<link>` in `index.html`, generated via srihash.org / `openssl dgst -sha384 -binary | openssl base64 -A`.
-- **Why:** smallest surgical change that satisfies #2.
-- **Alternative considered:** self-host the Inter font — would kill #2 *and* the COEP/CORP cross-origin risk in one move, but it's a larger change (bundle font files, rewrite `@font-face`). Recommended as a follow-up; out of scope here.
-- **Caveat:** Google Fonts CSS content can change over time; a pinned hash can break the stylesheet later. Mitigation: pin to the current response and document that font updates require re-hashing (or self-host).
+### D5 — Self-host the Inter font via `@fontsource/inter` (revised during apply)
+Remove the third-party Google Fonts `<link>` (and its `preconnect`s) from `index.html`; install `@fontsource/inter` and `import` the needed weights (400/500/600/700/800) in `main.ts` so Vite bundles the CSS and serves the woff2 files from our own origin.
+- **Why:** SRI on the Google Fonts *stylesheet* is unreliable — the CSS Google returns **varies by User-Agent** (proven during apply: two UAs → two different sha384 hashes), so a pinned `integrity` would block the stylesheet for any browser whose UA differs from the one hashed, and it can't be verified locally while the auth/DB wall is up. Self-hosting removes the third-party dependency entirely (the strongest fix for a supply-chain finding), is not UA-fragile, and makes the font same-origin so it no longer interacts with CSP `font-src`/COEP/CORP.
+- **Alternative considered — pin an SRI hash on the Google link (original D5):** rejected for the UA-variance fragility above.
+- **CSP impact:** drop `https://fonts.googleapis.com` from `style-src` and `https://fonts.gstatic.com` from `font-src`; `style-src 'self' 'unsafe-inline'` + `font-src 'self'` now suffice (bundled CSS + same-origin woff2).
 
 ## Risks / Trade-offs
 
@@ -83,6 +83,6 @@ Add `integrity="sha384-…"` + `crossorigin="anonymous"` to the Google Fonts `<l
 
 ## Open Questions
 
-- **COEP value:** `require-corp` (per the report) vs `credentialless` — decide after a live font-load check.
+- **COEP value:** RESOLVED → `credentialless`. `require-corp` would block cross-origin subresources lacking a CORP header (e.g. remote DALL·E background images); `credentialless` still satisfies AppScan #3 and won't break them. Chosen conservatively because the live smoke test is blocked by the auth/DB wall — re-confirm `require-corp` is viable once the app runs locally.
 - **`img-src` precision:** does the frontend load generated images by remote URL (needs `https:`) or as base64/blob (needs `data:`/`blob:`)? Confirm against `scenarioStore`/`SceneView` to tighten the directive.
 - **Self-host Inter font** as the durable fix for #2 + COEP/CORP — schedule as a follow-up change?

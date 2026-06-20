@@ -8,6 +8,36 @@
 > initial system record, not authored at decision time — dates are approximate to the commits
 > that introduced each choice. Refine when the original authors confirm details.
 
+## 2026-06-20 — Baseline HTTP security headers (per-layer) + self-hosted font
+
+**Context:** An HCL AppScan scan of the production deployment flagged 11 issues, mostly missing
+HTTP security headers (CSP, X-Content-Type-Options, Referrer-Policy, COOP/COEP/CORP, HSTS), a
+missing Subresource Integrity on the Google Fonts `<link>`, and a cacheable sensitive response.
+(`openspec/changes/harden-web-security`.)
+
+**Decision:** Emit the baseline headers from **two layers by response owner** — nginx adds them
+on the static SPA (`location /` only), and a FastAPI `SecurityHeadersMiddleware` adds them on
+every `/api/*` response (plus `Cache-Control: no-store`). Headers are deliberately *not* set at
+nginx `server` level so proxied `/api/*` responses aren't double-headed. The Inter font is
+**self-hosted** via `@fontsource/inter` (imported in `main.ts`) instead of the Google CDN —
+because the Google Fonts CSS varies by User-Agent, a pinned SRI hash is unreliable; self-hosting
+removes the third-party dependency entirely and makes the font same-origin.
+
+**Alternatives considered:**
+- Single `server`-level nginx header block — rejected: duplicates headers on proxied API responses.
+- SRI hash on the Google Fonts link — rejected: UA-dependent CSS makes the hash fragile (proven:
+  two UAs → two hashes).
+- `COEP: require-corp` (the scanner's recommendation) — rejected for `credentialless`, which still
+  satisfies the finding but doesn't block cross-origin subresources (e.g. remote DALL·E images).
+
+**Consequences:**
+- Headers are portable — they survive whatever edge fronts the app (our nginx, the production
+  IIS/ARR, or Vite in dev), since the API ones live in the app itself.
+- CSP keeps `style-src 'unsafe-inline'` (Vue/PrimeVue inject runtime styles); `script-src 'self'`
+  (no `unsafe-inline`/`eval`) is the part that matters for XSS.
+- Two infra-only findings (#1 force-HTTPS, #6 Spring Actuator) are operator tasks, not in this repo
+  (see RUNBOOK). Interactive CSP/COEP smoke is pending the local auth/DB env fix.
+
 ## 2026-06-11 — JWT auth with Google OAuth + email/password; token in URL hash
 
 **Context:** The game needs to know who is playing (for session persistence and future progress

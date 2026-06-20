@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import db
+from middleware.security_headers import SecurityHeadersMiddleware
 from routers import auth, scenario, chat, record, score, stt
 
 log = logging.getLogger(__name__)
@@ -28,6 +29,10 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# Security headers on every response. Added before CORS so CORSMiddleware stays
+# the outermost layer (added last) and still short-circuits OPTIONS preflight.
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

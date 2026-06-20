@@ -32,17 +32,17 @@ The FastAPI application SHALL attach the same baseline security headers (`Conten
 - **WHEN** a browser sends a CORS preflight from an allowed origin
 - **THEN** the existing CORS allow-origin/credentials behaviour is unchanged by the new middleware
 
-### Requirement: Subresource Integrity for third-party assets
+### Requirement: No untrusted third-party subresources
 
-Every third-party (cross-origin) `<script>` or stylesheet `<link>` referenced by the SPA entry document SHALL carry an `integrity` attribute and a `crossorigin` attribute, so the browser refuses tampered CDN assets. (AppScan #2)
+The SPA SHALL NOT load executable or style subresources from a third-party origin without integrity protection. The Inter web font SHALL be self-hosted (bundled and served same-origin) rather than loaded from the Google Fonts CDN, eliminating the untrusted third-party dependency. (AppScan #2)
 
-#### Scenario: Google Fonts stylesheet is integrity-pinned
+#### Scenario: No third-party font CDN reference in the entry document
 - **WHEN** the SPA `index.html` is inspected
-- **THEN** the `https://fonts.googleapis.com` stylesheet `<link>` has both an `integrity` (sha384) attribute and `crossorigin`
+- **THEN** it contains no `fonts.googleapis.com` or `fonts.gstatic.com` `<link>` (the font is imported from the bundled `@fontsource/inter` instead)
 
 #### Scenario: No unpinned cross-origin asset
 - **WHEN** the SPA `index.html` is inspected for cross-origin `<script>`/`<link rel="stylesheet">` elements
-- **THEN** none of them lack an `integrity` attribute
+- **THEN** there are none (all scripts/styles are same-origin or bundled)
 
 ### Requirement: Sensitive responses are non-cacheable
 

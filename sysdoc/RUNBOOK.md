@@ -110,6 +110,30 @@ docker compose -f infra/docker-compose.yml build --no-cache && \
 Production nginx routes `/api/` (REST) and `/api/chat/` (WebSocket) directly to the FastAPI
 backend; port `8000` is for internal upstream only — do not expose it.
 
+## Security headers & AppScan remediation
+
+The app sets a baseline of HTTP security headers in two layers (see ARCHITECTURE ADR 2026-06-20):
+- **nginx** (`nurvofronted/nginx.conf`, `location /`) — for the static SPA.
+- **FastAPI** (`nurvobackend/middleware/security_headers.py`) — for every `/api/*` response, plus
+  `Cache-Control: no-store`.
+
+Headers: `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
+`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: credentialless`,
+`Cross-Origin-Resource-Policy: same-origin`, `Strict-Transport-Security: max-age=31536000;
+includeSubDomains`. The Inter font is self-hosted (`@fontsource/inter`) — no Google Fonts CDN.
+
+**Verify after deploy:** `curl -I https://<host>/` and `curl -I https://<host>/api/health` — each
+header should appear exactly once; the API response must carry `Cache-Control: no-store`.
+
+**Operator-side findings (NOT fixable in this repo — the prod edge is IIS/ARR, not our nginx):**
+- **#1 Unenforced encryption** — configure IIS/ARR to redirect HTTP→HTTPS and add `Strict-Transport-Security`
+  with `preload` at the edge (then submit to the HSTS preload list).
+- **#6 Spring Boot Actuator exposed** — the prod `/nurvo/api/` showed a Spring actuator (the legacy
+  digiRunner, removed from this repo on 2026-06-08). Restrict it to authenticated users or remove it
+  from the production deployment.
+- If the app is ever moved back to loading the Google Fonts CDN, re-add Subresource Integrity — but
+  prefer keeping the font self-hosted (the CDN CSS is UA-dependent, so SRI hashes are fragile).
+
 ## Troubleshooting
 
 ### Game sessions vanish after a backend restart
