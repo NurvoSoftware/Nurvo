@@ -25,7 +25,7 @@
 ## 5. Verify
 
 - [x] 5.1 `npm run test:unit` (ChatPanel + chatStore green) + `npm run type-check` + `npm run lint`.
-- [ ] 5.2 DEFERRED — manual smoke blocked: a rebased auth+Postgres+credits merge gates the chat screen (login + DB credits required) and is not configured for local dev (no GOOGLE_CLIENT_ID, no Postgres in docker-compose, backend logs "DB unavailable"). Feature behaviour is fully covered by the 9 unit tests; do the visual + 注音 IME smoke once the local env is set up (separate issue).
+- [x] 5.2 Manual smoke DONE (2026-06-21, after `local-dev-env-setup` unblocked the auth/DB wall). Driven live against the running app (Vite → docker backend; real login + scenario + WebSocket): @ dropdown lists all targets; selecting one adds a chip and strips the `@query` from the textarea; a tab button toggles a chip on/off; chip `×` removes it without altering the text; sending with a chip puts CLEAN content (no `@`) in the bubble, the chip persists, and the targeted NPC (李美娟) replied over WS with TTS. IME guard verified: a synthetic `Enter` with `isComposing: true` does NOT send (real 注音 composition exercises the same guard; full IME composition can't be reproduced headlessly).
 
 ## 6. Close out
 

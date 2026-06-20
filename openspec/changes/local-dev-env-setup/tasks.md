@@ -17,7 +17,7 @@
 
 - [x] 4.1 `docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up --build`; confirm Postgres starts healthy and the backend logs the pool initialized (no "DB unavailable").
 - [x] 4.2 Log in at `http://localhost:8080` with the seeded dev account; confirm `/api/auth/me` returns the user and a scenario generates (credits deducted).
-- [ ] 4.3 Now-unblocked smokes: `chat-mention-chips` 5.2 (@ → chips → send, no `@` in bubble, 注音 IME) and `harden-web-security` 4.1 (console has no CSP/COEP violations, font renders).
+- [x] 4.3 Now-unblocked smokes DONE (2026-06-21). `chat-mention-chips` 5.2: @ dropdown → chip + text strip, tab toggle, `×` remove, send clean content (no `@`), targeted NPC reply over WS, IME guard — all verified live. `harden-web-security` 4.1: headers re-confirmed by curl on `:8080`, app driven live with a clean console, font + background render. (See each change's task notes for detail.)
 
 ## 5. Docs
 
@@ -25,5 +25,5 @@
 
 ## 6. Close out
 
-- [ ] 6.1 Mark the two deferred tasks complete in their changes once smoked (or note remaining issues).
-- [ ] 6.2 Run `openspec validate local-dev-env-setup`; then commit (await user go-ahead).
+- [x] 6.1 Marked the two deferred tasks complete in their changes (`chat-mention-chips` 5.2, `harden-web-security` 4.1) with the smoke results.
+- [x] 6.2 `openspec validate local-dev-env-setup` passed; change committed (165fde8) and pushed to main.

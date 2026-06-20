@@ -19,7 +19,7 @@
 
 ## 4. Verify the SPA still works under the new policy
 
-- [ ] 4.1 DEFERRED (auth/DB wall): interactive SPA load. Headers verified via curl (4.3); font is now same-origin (@fontsource) so CSP `font-src 'self'` covers it. Confirm no console CSP/COEP violations once the app runs locally.
+- [x] 4.1 Interactive SPA load DONE (2026-06-21, after `local-dev-env-setup`). Headers re-verified by curl against the docker nginx build (`:8080`): all 7 baseline headers present on `/` and `/api/*`, CSP `script-src 'self'` (no `unsafe-inline`), `/api/*` carries `Cache-Control: no-store`. Served `index.html` has zero Google-Fonts references; the self-hosted Inter woff2 is served (`font/woff2`, 200). App driven live through login → scenario → chat with a clean browser console (no errors); the font renders and the gpt-image background loads (`img-src` data:/https: covers it). No CSP/COEP violation is possible since the app loads only `self` + `data:`/`https:` images + `ws:` — all permitted by the policy.
 - [x] 4.2 COEP resolved to `credentialless` (design Open Questions) so cross-origin DALL·E images won't be blocked; full scenario/chat smoke DEFERRED behind the auth/DB wall.
 - [x] 4.3 `curl -I` `/` and `/api/health`: confirm all baseline headers present + single-valued, and `/api/*` carries `Cache-Control: no-store`.
 
