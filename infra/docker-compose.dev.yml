@@ -1,0 +1,39 @@
+# Local-dev override — adds a Postgres DB with auto-loaded schema + a seeded
+# dev login account, and wires the backend's DB/auth env.
+#
+#   docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up --build
+#
+# NOT for production: the seed account and dev secret are local-only. The base
+# docker-compose.yml stays deployment-clean (no DB, no seed).
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nurvo-db
+    environment:
+      POSTGRES_USER: nurvo
+      POSTGRES_PASSWORD: nurvo
+      POSTGRES_DB: nurvo
+    ports:
+      - "5432:5432"
+    volumes:
+      - nurvo_pgdata:/var/lib/postgresql/data
+      # Runs once on an empty volume, in filename order: schema → migration → seed.
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nurvo -d nurvo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    environment:
+      DATABASE_URL: postgresql://nurvo:nurvo@db:5432/nurvo
+      JWT_SECRET_KEY: dev-jwt-secret-not-for-production
+      FRONTEND_URL: http://localhost:8080
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  nurvo_pgdata:

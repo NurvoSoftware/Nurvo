@@ -7,18 +7,30 @@
 
 ### Full stack via Docker (recommended)
 
-```bash
-# 1. Create nurvobackend/.env with API keys (see .env.example).
-# 2. From the repo root:
-docker compose -f infra/docker-compose.yml build --no-cache && \
-  docker compose -f infra/docker-compose.yml up --force-recreate
+The app now requires Postgres + login. The **dev override** adds a Postgres service,
+auto-loads the schema, and seeds a login account — so one command brings up everything:
 
-# Frontend:        http://localhost:8080  (nginx proxies /api/* and /api/chat/ to the backend)
-# Backend (direct, for debugging): http://localhost:8000
+```bash
+# 1. Create nurvobackend/.env with API keys (see .env.example) — OPENAI_API_KEY +
+#    ELEVENLABS_API_KEY. DATABASE_URL / JWT_SECRET_KEY are supplied by the override.
+# 2. From the repo root:
+docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up --build
+
+# Frontend:  http://localhost:8080   Backend (debug): http://localhost:8000   Postgres: :5432
 
 # Stop:
-docker compose -f infra/docker-compose.yml down
+docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml down
+# Reset the DB (re-run schema + re-seed on next up):
+docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml down -v
 ```
+
+**Seeded dev login (local only):** `dev@nurvo.local` / `nurvodev123` (use the email/password
+form on the login page). The base `docker-compose.yml` alone has **no** database — it is the
+deployment-clean artifact; the dev DB, seed account, and dev secret live only in the override.
+
+**Google login (optional):** to exercise it locally, set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
+in `nurvobackend/.env` and add `http://localhost:8000/api/auth/google/callback` as an authorized
+redirect URI on your Google OAuth client. Email/password (above) needs none of this.
 
 ### Backend only (FastAPI)
 

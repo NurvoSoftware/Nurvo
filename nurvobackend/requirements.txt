@@ -9,3 +9,6 @@ python-multipart>=0.0.18
 asyncpg>=0.30.0
 PyJWT>=2.8.0
 passlib[bcrypt]>=1.7.4
+# Pin bcrypt to a passlib-1.7.4-compatible release: bcrypt>=4.1 removed
+# `__about__.__version__` (which passlib reads), breaking password hash/verify.
+bcrypt==4.0.1
