@@ -16,7 +16,7 @@
 - **Runtime**: Python 3.x
 
 ### Infrastructure & Services
-- **Database & Authentication**: [Supabase](https://supabase.com/) (planned for product auth / persistence; not required for the current in-memory game loop).
+- **Database & Authentication**: **PostgreSQL** (`asyncpg`) for user accounts and completed-session persistence; auth is custom JWT (Google OAuth + email/password), **not** Supabase. Live game state stays in-memory; only *completed* sessions are written to the DB.
 - **Voice Synthesis (TTS)**: [Eleven Labs](https://elevenlabs.io/)
 - **Speech-to-Text (STT)**: Eleven Labs Scribe API (`/api/stt`); user-facing error messages are generic; detailed errors are logged server-side only.
 - **LLM / AI Model**: [OpenAI GPT-4o](https://platform.openai.com/) for scenario JSON and NPC dialogue; **DALL·E 3** for optional ward background images (async; clients poll for readiness).
@@ -68,7 +68,9 @@ flowchart TB
 6. **Nursing record** submission and scoring flow (per existing routers / stores).
 
 **Planned**  
-- **User Authentication**: Supabase (or equivalent) for accounts and long-term data.
+- **Self-service sign-up** and linking persisted sessions to the logged-in user
+  (`game_sessions.user_id` is currently written as `NULL`). Auth itself (Google OAuth +
+  email/password JWT on Postgres) is already built.
 
 ## 5. Development Workflow
 1. **With Docker (recommended for full stack)**  

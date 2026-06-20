@@ -169,8 +169,11 @@ generated clinical scenario, then gets an LLM-graded scorecard. MVP stage.
 **Conventions:** Vue `<script setup lang="ts">` + Composition API + Pinia; FastAPI async +
 Pydantic + PEP 8. See `AGENT.md` for the WebSocket protocol (path-based `/api/chat/{session_id}`).
 
-**Critical caveat:** sessions are **in-memory only** (`nurvobackend/session_store.py`) — no DB,
-lost on restart; Supabase is planned, not built. Don't assume persistence.
+**Critical caveat:** *in-progress* game state is **in-memory** (`nurvobackend/session_store.py`)
+— a backend restart loses any live session. **Completed** sessions are persisted to **Postgres**
+(best-effort, async via `persist.py`) after scoring. Auth is custom JWT (Google OAuth +
+email/password) on Postgres — **not** Supabase (that was the old plan). Local Postgres comes from
+the dev compose override (`infra/docker-compose.dev.yml`).
 
 **Deeper docs:** `sysdoc/OVERVIEW.md` (system map) · `sysdoc/ARCHITECTURE.md` (why) ·
 `sysdoc/RUNBOOK.md` (how to run) · `SPEC.md` · `README.md` (Chinese).

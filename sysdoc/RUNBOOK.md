@@ -89,7 +89,14 @@ Frontend vars (`nurvofronted/.env.development`): `VITE_USE_MOCK_API`.
 3. Add `http://localhost:8000/api/auth/google/callback` to **Authorized redirect URIs**.
 4. Copy the Client ID and Client Secret into `nurvobackend/.env`.
 
-## Database setup (one-time)
+## Database setup
+
+**Docker dev path (recommended):** automatic. The dev override (`infra/docker-compose.dev.yml`)
+runs `infra/db-init/` on an empty volume in filename order — schema → `password_hash` migration →
+seed account. Nothing to run by hand; `down -v` then `up` re-seeds.
+
+**Non-Docker path** (pointing `DATABASE_URL` at your own Postgres): create the schema and apply the
+migrations manually:
 
 ```sql
 -- Run in pgAdmin or psql against the 'nurvo' database
@@ -149,9 +156,10 @@ header should appear exactly once; the API response must carry `Cache-Control: n
 ## Troubleshooting
 
 ### Game sessions vanish after a backend restart
-**Cause:** Sessions are stored **in memory only** (`session_store.py`); there is no database.
-**Fix:** Expected for MVP — re-generate the scenario. Durable sessions require the planned
-Supabase work; don't rely on session continuity across restarts.
+**Cause:** *Live* session state is held **in memory** (`session_store.py`). Postgres persists only
+*completed* sessions (via `persist.py`, after scoring) — an in-progress game has no DB row yet.
+**Fix:** Expected for MVP — re-generate the scenario. Don't rely on in-progress session continuity
+across restarts; durable live sessions would require backing `session_store` with the DB.
 
 ### WebSocket won't connect / "session not found"
 **Cause:** Wrong path or an unknown/expired `session_id`. The client must connect to

@@ -36,7 +36,7 @@ You are acting as an expert Full Stack Developer specializing in **Vue 3**, **Ty
 - **Dependencies**: Always ask to update `requirements.txt` if a new package is introduced.
 
 ## 4. External Integrations
-- **Supabase**: Used for authentication and database. Frontend uses Supabase JS client; Backend uses Python client. Ensure keys are managed via environment variables.
+- **PostgreSQL**: Authentication + data persistence. Backend uses an `asyncpg` pool (`db.py`); auth is custom JWT — Google OAuth + email/password in `routers/auth.py`, **no Supabase**. Completed sessions are persisted best-effort by `persist.py`. Manage `DATABASE_URL` / `JWT_SECRET_KEY` via environment variables.
 - **AI Services**:
     - **Eleven Labs**: For Text-to-Speech (TTS) voice synthesis.
     - **OpenAI GPT-4o (via OpenAI API)**: For LLM-based scenario generation, NPC conversation, and scoring analysis.
@@ -45,9 +45,9 @@ You are acting as an expert Full Stack Developer specializing in **Vue 3**, **Ty
 ## 5. Task Management
 - If a task involves multiple steps (e.g., "Create a simulation scenario"), break it down:
     1.  Create frontend UI components for the scenario.
-    2.  Implement backend logic to fetch AI-generated scripts (Gemini).
+    2.  Implement backend logic to fetch AI-generated scripts (OpenAI GPT-4o).
     3.  Integrate TTS (Eleven Labs) for voice output.
-    4.  Ensure data persistence via Supabase.
+    4.  Ensure data persistence via Postgres (`persist.py`, for completed sessions).
 
 ## 6. Common Commands
 - **Frontend Dev**: `cd nurvofronted && npm run dev`

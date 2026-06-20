@@ -24,7 +24,7 @@ flowchart TB
 * **後端 (Backend):** FastAPI (Python)
 * **語音 (Voice):** ElevenLabs TTS、ElevenLabs Scribe（語音轉文字）
 * **人工智慧 (AI):** OpenAI GPT-4o（情境與評分）、gpt-4.1-mini（對話預設，可調整）、DALL·E 3（病房背景圖，非同步產生）
-* **資料庫 (Database):** Supabase（規劃中）
+* **資料庫與認證 (DB & Auth):** PostgreSQL + 自建 JWT（Google OAuth / Email 登入）；進行中的對局存於記憶體，完成後寫入 DB
 
 ## 快速啟動 (Docker)
 

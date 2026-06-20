@@ -121,8 +121,9 @@ Chat uses the existing path-based WebSocket endpoint (`session_id` in the URL); 
 - Makes iteration trivial; zero DB ops.
 - Sessions are **lost on backend restart** and **cannot scale horizontally** (state is per
   process). Acceptable only for single-instance MVP.
-- Revisit when: auth/accounts, progress history, or multi-instance deploy is needed — that's
-  where the planned Supabase integration lands.
+- Revisit when: progress history or multi-instance deploy needs *live* sessions in a shared store.
+  (Auth/accounts and completed-session persistence already arrived on **Postgres** — see the two
+  2026-06-11 ADRs above — not the Supabase originally imagined here.)
 
 ## ~2026 — Async DALL·E background generation with client polling
 
