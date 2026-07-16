@@ -99,6 +99,7 @@ async def generate_scenario_endpoint(
     # Create and store game session
     game_session = GameSession(
         session_id=session_id,
+        user_id=current_user["id"],
         scenario_data=scenario.model_dump(),
         status=SessionStatus.BRIEFING,
         patient_system_prompt=patient_system_prompt,

@@ -26,6 +26,7 @@ class ChatMessage(BaseModel):
 
 class GameSession(BaseModel):
     session_id: str
+    user_id: str | None = None  # Owner, captured at /scenario/generate; None for legacy sessions
     scenario_data: dict  # Raw scenario dict for flexibility
     conversation_history: list[ChatMessage] = []
     current_target: str = "patient"
