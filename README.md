@@ -1,5 +1,37 @@
 # Nurvo
 
+## English Summary
+
+Nurvo is a web-based training game for nurse-patient communication. A nurse plays through an AI-generated pain-assessment scenario, talking by voice or text (in Traditional Chinese) with one AI patient and three AI family members, then writes a nursing record and receives an LLM-graded scorecard. It is a team project built for TPIsoftware's OpenTPI open-source program, and TPIsoftware showcased it at COMPUTEX 2026 (Taipei, May 2026) as an open-source digiRunner use case. The digiRunner API gateway, which then sat between nginx and FastAPI, was removed in June 2026; the frontend nginx now proxies REST and WebSocket traffic directly to FastAPI.
+
+**Key features**
+- Scenario generation with GPT-4o at three difficulty levels (easy, medium, hard); a DALL·E 3 ward background image is generated asynchronously and polled by the client.
+- WebSocket chat (`/api/chat/{session_id}`): the nurse picks one or more characters (or all of them) as targets with @mention chips; family members can interject, and NPCs speak up on their own when the nurse stays idle.
+- Voice input and output: ElevenLabs Scribe transcribes the nurse's speech; ElevenLabs TTS voices each NPC, choosing a voice by role and gender when those voice IDs are configured and falling back to a default voice otherwise.
+- GPT-4o scoring on five weighted dimensions (empathy 20%, guided questioning 25%, family calming 15%, information gathering 25%, response fluency 15%), shown on a results dashboard with a radar chart.
+- Google OAuth or email/password login (custom JWT on PostgreSQL), per-game credits, and best-effort storage of completed sessions.
+- Baseline HTTP security headers (CSP, HSTS, COOP/COEP/CORP and others) set in both nginx and a FastAPI middleware, added in response to an HCL AppScan web-security scan.
+
+**Tech stack:** Vue 3, TypeScript, Vite, Pinia, PrimeVue · FastAPI (Python 3.11), asyncpg, PostgreSQL · OpenAI GPT-4o (scenarios, scoring), gpt-4.1-mini (NPC dialogue, configurable), DALL·E 3 · ElevenLabs TTS and Scribe · nginx, Docker Compose · Vitest, pytest.
+
+**Status:** MVP. Live game state is kept in memory and lost when the backend restarts, completed sessions are not yet linked to user accounts, self-service sign-up is not built, and the interface is Traditional Chinese only. There is no CI; tests are run by hand, and the last recorded run (2026-06-20) had 29 backend tests passing and one pre-existing frontend failure (`LevelSelectView.spec.ts`).
+
+**Run locally** (Docker; first create `nurvobackend/.env` from `nurvobackend/.env.example` and set `OPENAI_API_KEY` and `ELEVENLABS_API_KEY`):
+```bash
+# From the repo root. The dev override adds Postgres, loads the schema and seeds a local-only login (see sysdoc/RUNBOOK.md).
+docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml up --build
+# Frontend: http://localhost:8080
+```
+
+**Run tests** (backend tests are `unittest`-style and run with pytest, which is not in `requirements.txt`, so install it alongside `pip install -r requirements.txt`; frontend tests use Vitest after `npm install`):
+```bash
+cd nurvobackend && pytest              # from the repo root
+cd nurvofronted && npm run test:unit   # from the repo root
+```
+
+The Traditional Chinese sections below cover architecture, API behavior and environment variables in more detail; English design and operations notes are in `sysdoc/`.
+
+
 護理溝通情境遊戲 MVP。透過語音互動與 AI 扮演的病患、家屬進行對話，訓練護理人員的溝通技巧。
 
 ## 系統架構
