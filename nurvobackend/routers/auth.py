@@ -19,6 +19,7 @@ from config import (
     JWT_EXPIRE_DAYS,
     JWT_SECRET_KEY,
 )
+from constants import INITIAL_CREDITS
 from db import get_pool
 from routers.deps import get_current_user
 
@@ -87,8 +88,8 @@ async def google_callback(code: str = Query(...)) -> RedirectResponse:
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            INSERT INTO public.users (id, email, name, picture_url, google_id, created_at, last_login_at)
-            VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+            INSERT INTO public.users (id, email, name, picture_url, google_id, credits, created_at, last_login_at)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
             ON CONFLICT (google_id) DO UPDATE SET
                 name           = EXCLUDED.name,
                 picture_url    = EXCLUDED.picture_url,
@@ -100,6 +101,7 @@ async def google_callback(code: str = Query(...)) -> RedirectResponse:
             name,
             picture_url,
             google_id,
+            INITIAL_CREDITS,
         )
 
     user_id = str(row["id"])

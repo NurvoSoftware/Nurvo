@@ -8,19 +8,6 @@
 > initial system record, not authored at decision time — dates are approximate to the commits
 > that introduced each choice. Refine when the original authors confirm details.
 
-## 2026-10-31 — Per-game credits switched off; kept on branch `feat/credits`
-
-**Context:** The credits mechanism (80 on sign-up, 30 per generated scenario, 402 when short) is
-not wanted for now and should be reviewable on its own.
-
-**Decision:** Removed the deduction, the 402, the credit badge/modals and `credits` /
-`credits_remaining` from API responses. The `users.credits` column is left in place (it has a
-default), so no migration is needed and re-enabling is a pure code change: branch `feat/credits`
-re-applies exactly this removal in reverse.
-
-**Alternative considered:** Dropping the column — rejected: irreversible on production data and
-unnecessary for turning the feature off.
-
 ## 2026-06-20 — Baseline HTTP security headers (per-layer) + self-hosted font
 
 **Context:** An HCL AppScan scan of the production deployment flagged 11 issues, mostly missing

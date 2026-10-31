@@ -20,10 +20,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/services/apiService', () => apiMocks)
 
-// NavBar's `/Nurvo_logo.png` import can't be resolved by vitest on Windows; a
-// stub alone doesn't help because the module is still imported.
-vi.mock('@/components/shared/NavBar.vue', () => ({ default: { template: '<nav />' } }))
-
 const scenario: Scenario = {
   id: 'scenario-1',
   patient_profile: {
@@ -87,18 +83,5 @@ describe('LevelSelectView', () => {
 
     expect(routerMock.push).toHaveBeenCalledWith({ name: 'briefing' })
     expect(wrapper.find('.error-alert').text()).toContain('教案已生成，但無法進入任務簡報')
-  })
-
-  it('generates straight away — no credit confirmation or shortfall modal', async () => {
-    apiMocks.generateScenario.mockResolvedValue({ session_id: 'session-1', scenario })
-    routerMock.push.mockResolvedValue(undefined)
-
-    const wrapper = mount(LevelSelectView, { global: { stubs: { NavBar: true } } })
-    await wrapper.find('button.primary-btn').trigger('click')
-    await flushPromises()
-
-    expect(apiMocks.generateScenario).toHaveBeenCalledWith('medium')
-    expect(document.body.textContent).not.toContain('點數')
-    expect(routerMock.push).toHaveBeenCalledWith({ name: 'briefing' })
   })
 })

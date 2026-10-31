@@ -29,7 +29,7 @@ async def get_current_user(authorization: str | None = Header(None)) -> dict:
     pool = get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT id, email, name, picture_url FROM public.users WHERE id = $1",
+            "SELECT id, email, name, picture_url, credits FROM public.users WHERE id = $1",
             uuid.UUID(user_id),
         )
 
@@ -41,4 +41,5 @@ async def get_current_user(authorization: str | None = Header(None)) -> dict:
         "email": row["email"],
         "name": row["name"],
         "picture_url": row["picture_url"],
+        "credits": row["credits"],
     }
