@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import HomeView from '../views/HomeView.vue'
 
-const PROTECTED = new Set(['level-select', 'briefing', 'scene', 'record', 'dashboard'])
+const PROTECTED = new Set(['level-select', 'briefing', 'scene', 'record', 'dashboard', 'history', 'history-detail'])
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,6 +46,16 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue'),
+    },
+    {
+      path: '/history',
+      name: 'history',
+      component: () => import('../views/HistoryView.vue'),
+    },
+    {
+      path: '/history/:sessionId',
+      name: 'history-detail',
+      component: () => import('../views/HistoryDetailView.vue'),
     },
   ],
 })

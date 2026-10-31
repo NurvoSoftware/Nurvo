@@ -23,6 +23,7 @@ Docker Compose stack.
 | Conversation engine | NPC replies, family interjections, idle→proactive speech | `nurvobackend/services/conversation_engine.py` |
 | Session store | In-memory game state (lost on restart) | `nurvobackend/session_store.py` |
 | DB persistence | asyncpg pool; best-effort write of completed sessions | `nurvobackend/db.py`, `nurvobackend/persist.py` |
+| History router | Read-only past reports for the caller: `GET /api/history` (list) and `GET /api/history/{id}` (full scorecard; another user's session is a 404) | `nurvobackend/routers/history.py` |
 | External AI services | LLM, image, voice (see table below) | called from `nurvobackend/services/` |
 
 ## Data flow
@@ -47,6 +48,8 @@ Game lifecycle (the user journey the data follows):
 5. **Score** — `POST /api/score/evaluate` → GPT-4o rubric returns weighted scores (empathy 20%,
    guided questioning 25%, family calming 15%, info gathering 25%, response fluency 15%),
    strengths, improvements, and key moments → Dashboard.
+6. **History** — once persisted, the session is listed under the NavBar user menu →
+   歷史遊玩報告 (`/history`, `/history/:sessionId`), read back from Postgres.
 
 ## Key external dependencies
 

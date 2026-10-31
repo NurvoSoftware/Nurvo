@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import db
 from middleware.security_headers import SecurityHeadersMiddleware
-from routers import auth, scenario, chat, record, score, stt
+from routers import auth, scenario, chat, record, score, stt, history
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +48,7 @@ app.include_router(chat.router, prefix="/api")
 app.include_router(record.router, prefix="/api")
 app.include_router(score.router, prefix="/api")
 app.include_router(stt.router, prefix="/api")
+app.include_router(history.router, prefix="/api")
 
 
 @app.get("/api/health")

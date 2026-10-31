@@ -1,4 +1,10 @@
-import type { ScenarioDifficulty, ScenarioGenerateResponse, ScoreResult } from '@/types/game'
+import type {
+  HistoryDetail,
+  HistoryItem,
+  ScenarioDifficulty,
+  ScenarioGenerateResponse,
+  ScoreResult,
+} from '@/types/game'
 
 const API_BASE = '/api'
 const MAX_RETRIES = 2
@@ -289,4 +295,12 @@ export async function evaluateScore(sessionId: string): Promise<ScoreResult> {
     method: 'POST',
     body: JSON.stringify({ session_id: sessionId }),
   })
+}
+
+export async function fetchHistory(): Promise<HistoryItem[]> {
+  return request<HistoryItem[]>('/history')
+}
+
+export async function fetchHistoryDetail(sessionId: string): Promise<HistoryDetail> {
+  return request<HistoryDetail>(`/history/${encodeURIComponent(sessionId)}`)
 }
