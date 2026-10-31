@@ -1,4 +1,11 @@
-import type { LatestRecord, ScenarioDifficulty, ScenarioGenerateResponse, ScoreResult } from '@/types/game'
+import type {
+  HistoryDetail,
+  HistoryItem,
+  LatestRecord,
+  ScenarioDifficulty,
+  ScenarioGenerateResponse,
+  ScoreResult,
+} from '@/types/game'
 
 const API_BASE = '/api'
 const MAX_RETRIES = 2
@@ -297,4 +304,12 @@ export async function fetchLatestRecord(): Promise<LatestRecord | null> {
     return null
   }
   return request<LatestRecord | null>('/score/latest')
+}
+
+export async function fetchHistory(): Promise<HistoryItem[]> {
+  return request<HistoryItem[]>('/history')
+}
+
+export async function fetchHistoryDetail(sessionId: string): Promise<HistoryDetail> {
+  return request<HistoryDetail>(`/history/${encodeURIComponent(sessionId)}`)
 }

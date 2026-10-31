@@ -169,6 +169,27 @@ export interface LatestRecord {
   sbar_analysis: SbarAnalysis | null
 }
 
+/** One completed session in `GET /api/history` (newest first). */
+export interface HistoryItem {
+  session_id: string
+  difficulty: string
+  completed_at: string
+  patient_name: string
+  patient_diagnosis: string
+  overall_score: number
+  level_label: string
+}
+
+/** `GET /api/history/{session_id}` — a past report with its full scorecard. */
+export interface HistoryDetail {
+  session_id: string
+  difficulty: string
+  completed_at: string
+  patient_name: string
+  patient_diagnosis: string
+  score: ScoreResult
+}
+
 export interface GameSession {
   session_id: string
   scenario: Scenario
