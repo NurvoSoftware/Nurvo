@@ -17,9 +17,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Proxy REST + chat WebSocket directly to the FastAPI backend
+      // Proxy REST + chat WebSocket directly to the FastAPI backend.
+      // API_PROXY_TARGET overrides the backend URL when :8000 is taken locally.
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.API_PROXY_TARGET || 'http://localhost:8000',
         changeOrigin: true,
         ws: true,
       },
