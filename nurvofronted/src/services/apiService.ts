@@ -1,4 +1,4 @@
-import type { ScenarioDifficulty, ScenarioGenerateResponse, ScoreResult } from '@/types/game'
+import type { LatestRecord, ScenarioDifficulty, ScenarioGenerateResponse, ScoreResult } from '@/types/game'
 
 const API_BASE = '/api'
 const MAX_RETRIES = 2
@@ -289,4 +289,12 @@ export async function evaluateScore(sessionId: string): Promise<ScoreResult> {
     method: 'POST',
     body: JSON.stringify({ session_id: sessionId }),
   })
+}
+
+/** Most recent completed session for the logged-in player; null if they've never finished one. */
+export async function fetchLatestRecord(): Promise<LatestRecord | null> {
+  if (USE_MOCK_API) {
+    return null
+  }
+  return request<LatestRecord | null>('/score/latest')
 }

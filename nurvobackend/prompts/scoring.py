@@ -30,6 +30,18 @@ SCORING_PROMPT = """你是一位護理溝通教育評分專家。請分析以下
 4. **資訊採集完整性**（權重 25%）：護理師收集的資訊是否完整（對照正確答案基準）
 5. **回應速度與流暢度**（權重 15%）：對話是否流暢、回應是否及時
 
+## 病患紀錄 SBAR 分析
+
+請另外依 SBAR 架構分析「病患狀況摘要（護理師填寫）」，此分析不計入上述分數：
+
+- **S 情境（Situation）**：是否說明病患目前的主要問題（如疼痛部位、程度）
+- **B 背景（Background）**：是否交代相關病史、診斷、用藥等背景
+- **A 評估（Assessment）**：是否寫出護理師自己的評估與判斷
+- **R 建議（Recommendation）**：是否提出具體的處置建議或後續計畫
+
+每項給一個評等：「complete」（完整）、「partial」（部分）、「missing」（缺漏），
+並附一句具體回饋（指出缺了什麼或寫得好的地方）。若護理師未提交摘要，四項皆為 missing。
+
 ## 輸出格式
 
 請以 JSON 格式回傳：
@@ -59,7 +71,13 @@ SCORING_PROMPT = """你是一位護理溝通教育評分專家。請分析以下
       "quality": "good" 或 "needs_improvement",
       "description": "為什麼這個時刻很重要的說明"
     }}
-  ]
+  ],
+  "sbar_analysis": {{
+    "situation": {{"rating": "complete" / "partial" / "missing", "feedback": "一句具體回饋"}},
+    "background": {{"rating": "...", "feedback": "..."}},
+    "assessment": {{"rating": "...", "feedback": "..."}},
+    "recommendation": {{"rating": "...", "feedback": "..."}}
+  }}
 }}
 
 只回傳 JSON，不要有其他文字。"""

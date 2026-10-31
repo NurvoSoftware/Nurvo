@@ -46,7 +46,11 @@ Game lifecycle (the user journey the data follows):
 4. **Record** — `POST /api/record/submit` stores the nurse's clinical note; status → SCORING.
 5. **Score** — `POST /api/score/evaluate` → GPT-4o rubric returns weighted scores (empathy 20%,
    guided questioning 25%, family calming 15%, info gathering 25%, response fluency 15%),
-   strengths, improvements, and key moments → Dashboard.
+   strengths, improvements, key moments, and an unscored SBAR review (S/B/A/R each
+   complete/partial/missing) of the nurse's record → Dashboard.
+6. **Review** — next visit to level select calls `GET /api/score/latest` (auth) and shows the
+   player's previous score, weakest dimension, top improvements, and SBAR gaps. First-time
+   visitors are offered the `/cookbook` walkthrough (dismissal kept in `localStorage`).
 
 ## Key external dependencies
 

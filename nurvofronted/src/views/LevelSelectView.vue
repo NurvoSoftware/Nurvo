@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScenarioStore } from '@/stores/scenarioStore'
 import { useGameStore } from '@/stores/gameStore'
 import { useAuthStore } from '@/stores/authStore'
-import type { ScenarioDifficulty } from '@/types/game'
+import { fetchLatestRecord } from '@/services/apiService'
+import type { LatestRecord, ScenarioDifficulty } from '@/types/game'
 import NavBar from '@/components/shared/NavBar.vue'
+import LastRecordCard from '@/components/dashboard/LastRecordCard.vue'
 
 const CREDITS_PER_GAME = 30
+const COOKBOOK_SEEN_KEY = 'nurvo_cookbook_seen'
 
 const router = useRouter()
 const scenarioStore = useScenarioStore()
@@ -21,6 +24,26 @@ const loading = ref(false)
 const errorMsg = ref('')
 const showConfirm = ref(false)
 const showNoCredits = ref(false)
+const latestRecord = ref<LatestRecord | null>(null)
+const showCookbookPrompt = ref(!localStorage.getItem(COOKBOOK_SEEN_KEY))
+
+function dismissCookbookPrompt(): void {
+  localStorage.setItem(COOKBOOK_SEEN_KEY, '1')
+  showCookbookPrompt.value = false
+}
+
+function openCookbook(): void {
+  dismissCookbookPrompt()
+  router.push({ name: 'cookbook' })
+}
+
+onMounted(async () => {
+  try {
+    latestRecord.value = await fetchLatestRecord()
+  } catch {
+    // Review card is optional — never block choosing a level over it.
+  }
+})
 
 const contactMailto = computed(() => {
   const name = authStore.user?.name ?? ''
@@ -111,7 +134,10 @@ function goBack() {
       <header class="level-header">
         <h1 class="title">選擇關卡難度</h1>
         <p class="subtitle">系統會依據你選擇的難度，生成對應難度的教案</p>
+        <button class="cookbook-link" @click="router.push({ name: 'cookbook' })">📖 操作指引</button>
       </header>
+
+      <LastRecordCard v-if="latestRecord" :record="latestRecord" />
 
       <section class="difficulty-grid">
         <button
@@ -150,6 +176,20 @@ function goBack() {
     </main>
 
     <Teleport to="body">
+      <div v-if="showCookbookPrompt" class="modal-overlay cookbook-prompt">
+        <div class="modal-card">
+          <p class="modal-title">第一次來嗎？👋</p>
+          <p class="modal-body">
+            先花 1 分鐘看看操作指引，了解從選難度到看成果報告的完整流程。<br>
+            之後也可以從頁面上方的「操作指引」再打開。
+          </p>
+          <div class="modal-actions">
+            <button class="modal-btn modal-btn--cancel" @click="dismissCookbookPrompt">略過</button>
+            <button class="modal-btn modal-btn--confirm" @click="openCookbook">看操作指引</button>
+          </div>
+        </div>
+      </div>
+
       <div v-if="showConfirm" class="modal-overlay" @click.self="showConfirm = false">
         <div class="modal-card">
           <p class="modal-title">確認生成教案</p>
@@ -214,6 +254,22 @@ function goBack() {
   margin: 10px 0 0;
   color: var(--nurvo-text-secondary);
   font-size: 15px;
+}
+
+.cookbook-link {
+  margin-top: 10px;
+  border: 1px solid var(--nurvo-primary-border);
+  border-radius: 999px;
+  background: var(--nurvo-primary-light);
+  color: var(--nurvo-primary);
+  padding: 4px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cookbook-link:hover {
+  background: #dbeafe;
 }
 
 .difficulty-grid {

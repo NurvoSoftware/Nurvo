@@ -6,10 +6,11 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from openai import AsyncOpenAI
+from pydantic import ValidationError
 
 from config import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_TIMEOUT
 from models.chat import GameSession
-from models.score import DimensionScores, KeyMoment, ScoreResult
+from models.score import DimensionScores, KeyMoment, SbarAnalysis, ScoreResult
 from prompts.scoring import build_scoring_input
 
 logger = logging.getLogger(__name__)
@@ -95,6 +96,18 @@ def _build_conversation_transcript(session: GameSession) -> str:
         interjection = "（插話）" if msg.is_interjection else ""
         lines.append(f"{elapsed} {label}{interjection}：{msg.content}")
     return "\n".join(lines) if lines else "（無對話紀錄）"
+
+
+def _parse_sbar(raw: dict) -> SbarAnalysis | None:
+    """Parse the SBAR block; a malformed one is dropped rather than failing the score."""
+    data = raw.get("sbar_analysis")
+    if data is None:
+        return None
+    try:
+        return SbarAnalysis.model_validate(data)
+    except ValidationError as exc:
+        logger.warning("Discarding malformed sbar_analysis: %s", exc)
+        return None
 
 
 def _compute_elapsed_seconds(session: GameSession) -> float:
@@ -202,6 +215,7 @@ async def evaluate_session(session: GameSession) -> ScoreResult:
             strengths=raw.get("strengths", []),
             improvements=raw.get("improvements", []),
             key_moments=key_moments,
+            sbar_analysis=_parse_sbar(raw),
         )
 
     except json.JSONDecodeError as exc:
