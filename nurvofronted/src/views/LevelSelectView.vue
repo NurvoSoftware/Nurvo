@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { fetchLatestRecord } from '@/services/apiService'
 import type { LatestRecord, ScenarioDifficulty } from '@/types/game'
 import NavBar from '@/components/shared/NavBar.vue'
+import BackButton from '@/components/shared/BackButton.vue'
 import LastRecordCard from '@/components/dashboard/LastRecordCard.vue'
 
 const CREDITS_PER_GAME = 30
@@ -131,6 +132,7 @@ function goBack() {
     <NavBar />
 
     <main class="level-container">
+      <BackButton to="/" label="返回首頁" class="level-back" />
       <header class="level-header">
         <h1 class="title">選擇關卡難度</h1>
         <p class="subtitle">系統會依據你選擇的難度，生成對應難度的教案</p>
@@ -238,6 +240,12 @@ function goBack() {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* Container is a flex column; keep the link at its natural width on the left. */
+.level-back {
+  align-self: flex-start;
+  margin-bottom: -6px;
 }
 
 .level-header {

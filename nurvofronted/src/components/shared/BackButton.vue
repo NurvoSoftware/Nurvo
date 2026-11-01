@@ -23,27 +23,43 @@ function goBack(): void {
 </script>
 
 <template>
-  <button class="back-button" type="button" @click="goBack">← {{ label }}</button>
+  <button class="back-button" type="button" @click="goBack">
+    <span class="back-button__arrow" aria-hidden="true">←</span>
+    <span class="back-button__label">{{ label }}</span>
+  </button>
 </template>
 
 <style scoped>
+/* The one look for every "back" link: plain text, underlined label, arrow in front. */
 .back-button {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border: 1px solid #dbeafe;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-  color: #2563eb;
-  font-size: 14px;
-  font-weight: 600;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: #1d4ed8;
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+}
+
+.back-button__label {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
 }
 
 .back-button:hover {
-  background: #eff6ff;
-  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.back-button:hover .back-button__arrow {
+  transform: translateX(-2px);
+}
+
+.back-button__arrow {
+  transition: transform 0.15s;
 }
 </style>

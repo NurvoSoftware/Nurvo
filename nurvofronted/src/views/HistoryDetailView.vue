@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import NavBar from '@/components/shared/NavBar.vue'
+import BackButton from '@/components/shared/BackButton.vue'
 import RadarChart from '@/components/dashboard/RadarChart.vue'
 import ScoreChart from '@/components/dashboard/ScoreChart.vue'
 import FeedbackCard from '@/components/dashboard/FeedbackCard.vue'
@@ -83,6 +84,7 @@ function formatDate(iso: string) {
 
     <main class="detail-shell">
       <div class="detail-container">
+        <BackButton to="/history" label="返回歷史紀錄" />
 
         <div v-if="loading" class="state-box">
           <div class="spinner" />
@@ -98,7 +100,6 @@ function formatDate(iso: string) {
           <!-- Header -->
           <section class="report-heading">
             <div class="heading-meta">
-              <button class="back-btn" @click="router.push('/history')">← 歷史紀錄</button>
               <div class="meta-chips">
                 <span class="chip">{{ formatDate(playedAt) }}</span>
                 <span class="chip">{{ difficultyLabel[difficulty] ?? difficulty }}</span>
@@ -229,17 +230,6 @@ function formatDate(iso: string) {
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
-
-.back-btn {
-  background: none;
-  border: none;
-  color: #2563eb;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-}
-.back-btn:hover { text-decoration: underline; }
 
 .meta-chips { display: flex; gap: 8px; flex-wrap: wrap; }
 

@@ -7,6 +7,9 @@ import HistoryView from '@/views/HistoryView.vue'
 import CookbookView from '@/views/CookbookView.vue'
 import BriefingView from '@/views/BriefingView.vue'
 import RecordView from '@/views/RecordView.vue'
+import LevelSelectView from '@/views/LevelSelectView.vue'
+import LoginView from '@/views/LoginView.vue'
+import HistoryDetailView from '@/views/HistoryDetailView.vue'
 import { useChatStore } from '@/stores/chatStore'
 import { useGameStore } from '@/stores/gameStore'
 import { useScenarioStore } from '@/stores/scenarioStore'
@@ -21,11 +24,16 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/services/apiService', () => ({
   fetchHistory: vi.fn().mockResolvedValue([]),
+  fetchHistoryDetail: vi.fn().mockRejectedValue(new Error('Report not found')),
+  fetchLatestRecord: vi.fn().mockResolvedValue(null),
+  generateScenario: vi.fn(),
+  fetchBackgroundImage: vi.fn(),
   submitRecord: vi.fn(),
 }))
 
 // NavBar's public-dir logo compiles to an import that vitest can't resolve on Windows.
 vi.mock('@/components/shared/NavBar.vue', () => ({ default: { template: '<nav />' } }))
+vi.mock('/Nurvo_logo.png', () => ({ default: '/Nurvo_logo.png' }))
 
 const scenario = {
   id: 'scenario-1',
@@ -77,7 +85,9 @@ describe('BackButton', () => {
   it('navigates straight to its target when no confirmation is needed', async () => {
     const wrapper = mount(BackButton, { props: { to: '/', label: '返回首頁' } })
 
-    expect(wrapper.text()).toContain('返回首頁')
+    // Arrow and label are separate so only the label is underlined.
+    expect(wrapper.find('.back-button__arrow').text()).toBe('←')
+    expect(wrapper.find('.back-button__label').text()).toBe('返回首頁')
     await wrapper.trigger('click')
 
     expect(confirmSpy).not.toHaveBeenCalled()
@@ -110,6 +120,29 @@ describe('BackButton', () => {
 })
 
 describe('every page has a way back', () => {
+  it('level select goes home', async () => {
+    const wrapper = mount(LevelSelectView, { global: { stubs: { Teleport: true } } })
+    await flushPromises()
+
+    await wrapper.findComponent(BackButton).trigger('click')
+    expect(routerMock.push).toHaveBeenCalledWith('/')
+  })
+
+  it('login goes home', async () => {
+    const wrapper = mount(LoginView)
+
+    await wrapper.findComponent(BackButton).trigger('click')
+    expect(routerMock.push).toHaveBeenCalledWith('/')
+  })
+
+  it('history report goes back to the list, even when it failed to load', async () => {
+    const wrapper = mount(HistoryDetailView)
+    await flushPromises()
+
+    await wrapper.findComponent(BackButton).trigger('click')
+    expect(routerMock.push).toHaveBeenCalledWith('/history')
+  })
+
   it('history list goes home', async () => {
     const wrapper = mount(HistoryView)
     await flushPromises()
