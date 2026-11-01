@@ -3,7 +3,6 @@ export interface User {
   email: string
   name: string | null
   picture_url: string | null
-  credits: number
 }
 
 export interface PatientProfile {
@@ -214,7 +213,6 @@ export type GameStatus =
 export interface ScenarioGenerateResponse {
   session_id: string
   scenario: Scenario
-  credits_remaining: number
 }
 
 export interface WsNpcMessage {

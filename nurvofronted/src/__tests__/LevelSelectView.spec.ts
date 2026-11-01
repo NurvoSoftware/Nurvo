@@ -3,8 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import LevelSelectView from '@/views/LevelSelectView.vue'
-import { useAuthStore } from '@/stores/authStore'
-import type { LatestRecord, Scenario, User } from '@/types/game'
+import type { LatestRecord, Scenario } from '@/types/game'
 
 const routerMock = vi.hoisted(() => ({
   push: vi.fn(),
@@ -165,15 +164,26 @@ describe('LevelSelectView', () => {
       scenario,
     })
     routerMock.push.mockRejectedValue(new Error('navigation failed'))
-    useAuthStore().user = { credits: 100 } as User
 
     const wrapper = mountView()
 
     await wrapper.find('button.primary-btn').trigger('click')
-    await wrapper.find('.modal-btn--confirm').trigger('click')
     await flushPromises()
 
     expect(routerMock.push).toHaveBeenCalledWith({ name: 'briefing' })
     expect(wrapper.find('.error-alert').text()).toContain('教案已生成，但無法進入任務簡報')
+  })
+
+  it('generates straight away — no credit confirmation or shortfall modal', async () => {
+    apiMocks.generateScenario.mockResolvedValue({ session_id: 'session-1', scenario })
+    routerMock.push.mockResolvedValue(undefined)
+
+    const wrapper = mount(LevelSelectView, { global: { stubs: { NavBar: true } } })
+    await wrapper.find('button.primary-btn').trigger('click')
+    await flushPromises()
+
+    expect(apiMocks.generateScenario).toHaveBeenCalledWith('medium')
+    expect(document.body.textContent).not.toContain('點數')
+    expect(routerMock.push).toHaveBeenCalledWith({ name: 'briefing' })
   })
 })

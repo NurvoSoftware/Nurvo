@@ -153,7 +153,7 @@ describe('NavBar user menu', () => {
   it('opens a dropdown with history and logout', async () => {
     const auth = useAuthStore()
     auth.token = 'tok'
-    auth.user = { id: 'u1', email: 'a@b.c', name: '小護士', picture_url: null, credits: 30 }
+    auth.user = { id: 'u1', email: 'a@b.c', name: '小護士', picture_url: null }
 
     const wrapper = mount(NavBar, { global: { stubs: { RouterLink: true } } })
     expect(wrapper.find('.dropdown').exists()).toBe(false)

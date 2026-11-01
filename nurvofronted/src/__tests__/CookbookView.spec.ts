@@ -83,6 +83,16 @@ describe('CookbookView', () => {
     expect(wrapper.find('.step-counter').text()).toMatch(/^1 \//)
   })
 
+  it('no step mentions credits (switched off)', async () => {
+    const wrapper = mountView()
+    const total = wrapper.findAll('.step-dot').length
+
+    for (let i = 0; i < total; i++) {
+      await wrapper.findAll('.step-dot button')[i]!.trigger('click')
+      expect(wrapper.find('.step-text').text()).not.toMatch(/點數|扣.*點/)
+    }
+  })
+
   it('can be left at any time', async () => {
     const wrapper = mountView()
     await wrapper.find('.btn-skip').trigger('click')

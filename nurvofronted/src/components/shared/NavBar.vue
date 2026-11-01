@@ -47,7 +47,6 @@ function handleLogout() {
           :alt="authStore.user.name ?? ''"
           referrerpolicy="no-referrer"
         />
-        <span class="credits-badge">{{ authStore.user?.credits ?? 0 }} 點</span>
         <div class="user-menu" @click.stop>
           <button class="user-menu-btn" :aria-expanded="showMenu" @click="showMenu = !showMenu">
             <span class="user-name">{{ authStore.user?.name ?? authStore.user?.email }}</span>
@@ -120,17 +119,6 @@ function handleLogout() {
   max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.credits-badge {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1d4ed8;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 999px;
-  padding: 4px 12px;
   white-space: nowrap;
 }
 

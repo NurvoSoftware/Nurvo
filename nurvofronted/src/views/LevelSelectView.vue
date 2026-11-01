@@ -3,28 +3,21 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScenarioStore } from '@/stores/scenarioStore'
 import { useGameStore } from '@/stores/gameStore'
-import { useAuthStore } from '@/stores/authStore'
 import { fetchLatestRecord } from '@/services/apiService'
 import type { LatestRecord, ScenarioDifficulty } from '@/types/game'
 import NavBar from '@/components/shared/NavBar.vue'
 import BackButton from '@/components/shared/BackButton.vue'
 import LastRecordCard from '@/components/dashboard/LastRecordCard.vue'
 
-const CREDITS_PER_GAME = 30
 const COOKBOOK_SEEN_KEY = 'nurvo_cookbook_seen'
 
 const router = useRouter()
 const scenarioStore = useScenarioStore()
 const gameStore = useGameStore()
-const authStore = useAuthStore()
-
-const TEAM_EMAIL = 'nurvo.contact@gmail.com'
 
 const selectedDifficulty = ref<ScenarioDifficulty>('medium')
 const loading = ref(false)
 const errorMsg = ref('')
-const showConfirm = ref(false)
-const showNoCredits = ref(false)
 const latestRecord = ref<LatestRecord | null>(null)
 const showCookbookPrompt = ref(!localStorage.getItem(COOKBOOK_SEEN_KEY))
 
@@ -44,17 +37,6 @@ onMounted(async () => {
   } catch {
     // Review card is optional — never block choosing a level over it.
   }
-})
-
-const contactMailto = computed(() => {
-  const name = authStore.user?.name ?? ''
-  const email = authStore.user?.email ?? ''
-  const credits = authStore.user?.credits ?? 0
-  const subject = encodeURIComponent('[Nurvo] 點數補充申請')
-  const body = encodeURIComponent(
-    `您好，\n\n我是 ${name}（${email}），目前帳號剩餘 ${credits} 點，不足以繼續進行訓練。\n\n懇請協助補充點數，謝謝！`
-  )
-  return `mailto:${TEAM_EMAIL}?subject=${subject}&body=${body}`
 })
 
 const difficultyOptions: Array<{
@@ -88,18 +70,7 @@ const selectedOption = computed(() => {
   return matched ?? difficultyOptions[1]!
 })
 
-function handleGenerateClick() {
-  errorMsg.value = ''
-  const currentCredits = authStore.user?.credits ?? 0
-  if (currentCredits < CREDITS_PER_GAME) {
-    showNoCredits.value = true
-    return
-  }
-  showConfirm.value = true
-}
-
 async function generateAndContinue() {
-  showConfirm.value = false
   if (loading.value) return
 
   loading.value = true
@@ -109,7 +80,6 @@ async function generateAndContinue() {
     gameStore.reset()
     scenarioStore.reset()
     await scenarioStore.fetchScenario(selectedDifficulty.value)
-    await authStore.fetchMe()
     await router.push({ name: 'briefing' })
   } catch (error: any) {
     if (scenarioStore.scenario && gameStore.sessionId) {
@@ -170,7 +140,7 @@ function goBack() {
 
       <footer class="actions">
         <button class="secondary-btn" @click="goBack" :disabled="loading">返回首頁</button>
-        <button class="primary-btn" @click="handleGenerateClick" :disabled="loading">
+        <button class="primary-btn" @click="generateAndContinue" :disabled="loading">
           <span v-if="!loading">生成教案</span>
           <span v-else>生成中...</span>
         </button>
@@ -188,38 +158,6 @@ function goBack() {
           <div class="modal-actions">
             <button class="modal-btn modal-btn--cancel" @click="dismissCookbookPrompt">略過</button>
             <button class="modal-btn modal-btn--confirm" @click="openCookbook">看操作指引</button>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="showConfirm" class="modal-overlay" @click.self="showConfirm = false">
-        <div class="modal-card">
-          <p class="modal-title">確認生成教案</p>
-          <p class="modal-body">
-            將扣除 <strong>{{ CREDITS_PER_GAME }} 點</strong><br>
-            目前剩餘：<strong>{{ authStore.user?.credits ?? 0 }} 點</strong>
-          </p>
-          <div class="modal-actions">
-            <button class="modal-btn modal-btn--cancel" @click="showConfirm = false">取消</button>
-            <button class="modal-btn modal-btn--confirm" @click="generateAndContinue">確認生成</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <Teleport to="body">
-      <div v-if="showNoCredits" class="modal-overlay" @click.self="showNoCredits = false">
-        <div class="modal-card">
-          <div class="nc-icon">&#x26A0;&#xFE0F;</div>
-          <p class="modal-title">點數不足</p>
-          <p class="modal-body">
-            目前剩餘 <strong>{{ authStore.user?.credits ?? 0 }} 點</strong>，<br>
-            需要 <strong>{{ CREDITS_PER_GAME }} 點</strong> 才能生成教案。<br><br>
-            請聯絡團隊補充點數。
-          </p>
-          <div class="modal-actions">
-            <button class="modal-btn modal-btn--cancel" @click="showNoCredits = false">關閉</button>
-            <a class="modal-btn modal-btn--confirm" :href="contactMailto">寄信聯絡團隊</a>
           </div>
         </div>
       </div>
@@ -481,11 +419,6 @@ function goBack() {
 
 .modal-btn--confirm:hover {
   opacity: 0.9;
-}
-
-.nc-icon {
-  font-size: 36px;
-  margin-bottom: 8px;
 }
 
 @media (max-width: 900px) {
