@@ -225,9 +225,9 @@ function scrollToTarget(): void {
 }
 
 .cookbook-container {
-  max-width: 1180px;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 40px 16px 56px;
+  padding: 24px 16px 40px;
 }
 
 .cookbook-header {
@@ -253,7 +253,7 @@ function scrollToTarget(): void {
   justify-content: center;
   gap: 10px;
   padding: 0;
-  margin: 28px 0 20px;
+  margin: 18px 0 14px;
 }
 
 .step-dot button {
@@ -284,7 +284,7 @@ function scrollToTarget(): void {
   border: 1px solid #dbeafe;
   border-radius: 18px;
   background: #ffffff;
-  padding: 32px;
+  padding: 24px;
   box-shadow: 0 10px 30px rgba(37, 99, 235, 0.08);
 }
 
@@ -300,8 +300,8 @@ function scrollToTarget(): void {
 
 .step-layout {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: 28px;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+  gap: 24px;
   align-items: center;
 }
 
