@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/shared/NavBar.vue'
+import BackButton from '@/components/shared/BackButton.vue'
 import levelShot from '@/assets/cookbook/level.jpg'
 import briefingShot from '@/assets/cookbook/briefing.jpg'
 import chatShot from '@/assets/cookbook/chat.jpg'
@@ -153,6 +154,8 @@ function scrollToTarget(): void {
     <NavBar />
 
     <main class="cookbook-container">
+      <BackButton :to="{ name: 'level-select' }" label="返回選擇難度" />
+
       <header class="cookbook-header">
         <h1 class="title">操作指引</h1>
         <p class="subtitle">跟著閃爍的提示點一次，走過完整的練習流程</p>

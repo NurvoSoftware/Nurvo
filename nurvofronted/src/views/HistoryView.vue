@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/shared/NavBar.vue'
+import BackButton from '@/components/shared/BackButton.vue'
 import { fetchHistory } from '@/services/apiService'
 import type { HistoryItem } from '@/types/game'
 
@@ -53,6 +54,7 @@ function viewDetail(sessionId: string) {
 
     <main class="history-shell">
       <div class="history-container">
+        <BackButton to="/" label="返回首頁" />
         <h2 class="page-title">歷史遊玩報告</h2>
 
         <div v-if="loading" class="state-box">

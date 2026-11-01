@@ -4,12 +4,20 @@ import { useRouter } from 'vue-router'
 import { useScenarioStore } from '@/stores/scenarioStore'
 import { useGameStore } from '@/stores/gameStore'
 import NavBar from '@/components/shared/NavBar.vue'
+import BackButton from '@/components/shared/BackButton.vue'
 import PatientCard from '@/components/game/PatientCard.vue'
 import { unlock as unlockAudio } from '@/services/audioService'
 
 const router = useRouter()
 const scenarioStore = useScenarioStore()
 const gameStore = useGameStore()
+
+const LEAVE_CONFIRM = '確定要返回選擇難度嗎？這份教案將不會保留。'
+
+function discardScenario(): void {
+  scenarioStore.reset()
+  gameStore.reset()
+}
 
 const timeLimit = computed<number>(() => {
   if (!scenarioStore.scenario) return 0
@@ -88,6 +96,12 @@ function enterScene(): void {
 
     <main class="briefing-shell">
       <section class="briefing-glass">
+        <BackButton
+          :to="{ name: 'level-select' }"
+          label="返回選擇難度"
+          :confirm-message="LEAVE_CONFIRM"
+          @leave="discardScenario"
+        />
         <header class="briefing-header">
           <p class="briefing-eyebrow">Clinical Scenario Briefing</p>
           <h1 class="briefing-title">任務簡報</h1>
