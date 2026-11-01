@@ -1,4 +1,11 @@
-import type { ScenarioDifficulty, ScenarioGenerateResponse, ScoreResult } from '@/types/game'
+import type {
+  HistoryDetail,
+  HistoryItem,
+  LatestRecord,
+  ScenarioDifficulty,
+  ScenarioGenerateResponse,
+  ScoreResult,
+} from '@/types/game'
 
 const API_BASE = '/api'
 const MAX_RETRIES = 2
@@ -32,7 +39,6 @@ function createMockScenarioResponse(difficulty: ScenarioDifficulty = 'medium'): 
 
   return {
     session_id: randomId('mock-session'),
-    credits_remaining: 999,
     scenario: {
       id: randomId('mock-scenario'),
       patient_profile: {
@@ -289,4 +295,20 @@ export async function evaluateScore(sessionId: string): Promise<ScoreResult> {
     method: 'POST',
     body: JSON.stringify({ session_id: sessionId }),
   })
+}
+
+/** Most recent completed session for the logged-in player; null if they've never finished one. */
+export async function fetchLatestRecord(): Promise<LatestRecord | null> {
+  if (USE_MOCK_API) {
+    return null
+  }
+  return request<LatestRecord | null>('/score/latest')
+}
+
+export async function fetchHistory(): Promise<HistoryItem[]> {
+  return request<HistoryItem[]>('/history')
+}
+
+export async function fetchHistoryDetail(sessionId: string): Promise<HistoryDetail> {
+  return request<HistoryDetail>(`/history/${encodeURIComponent(sessionId)}`)
 }

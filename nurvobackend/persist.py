@@ -54,7 +54,7 @@ async def save_completed_session(session: GameSession, score: ScoreResult) -> No
                         chat_messages = EXCLUDED.chat_messages
                     """,
                     uuid.UUID(session.session_id),
-                    None,
+                    uuid.UUID(session.user_id) if session.user_id else None,
                     difficulty,
                     "completed",
                     sd.get("time_limit_seconds", 480),
@@ -128,8 +128,9 @@ async def save_completed_session(session: GameSession, score: ScoreResult) -> No
                         (id, session_id, overall_score, level_label,
                          score_empathy, score_guided_questioning, score_family_calming,
                          score_info_gathering, score_response_fluency,
-                         strengths, improvements, key_moments, evaluated_at)
-                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+                         strengths, improvements, key_moments, evaluated_at,
+                         sbar_analysis)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
                     ON CONFLICT (session_id) DO NOTHING
                     """,
                     uuid.uuid4(),
@@ -145,9 +146,10 @@ async def save_completed_session(session: GameSession, score: ScoreResult) -> No
                     score.improvements,
                     [k.model_dump() for k in score.key_moments],
                     now,
+                    score.sbar_analysis.model_dump() if score.sbar_analysis else None,
                 )
 
         log.info("Session %s persisted to DB (%d messages)", session.session_id, len(chat_messages))
 
     except Exception as exc:
-        log.error("DB persist failed for session %s: %s", session.session_id, exc)
+        log.exception("DB persist failed for session %s: %s", session.session_id, exc)

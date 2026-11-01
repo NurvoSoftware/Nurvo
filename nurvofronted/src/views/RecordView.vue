@@ -3,13 +3,25 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '@/stores/gameStore'
 import { useScenarioStore } from '@/stores/scenarioStore'
+import { useChatStore } from '@/stores/chatStore'
 import { submitRecord } from '@/services/apiService'
 import NavBar from '@/components/shared/NavBar.vue'
+import BackButton from '@/components/shared/BackButton.vue'
 
 const router = useRouter()
 const route = useRoute()
 const gameStore = useGameStore()
 const scenarioStore = useScenarioStore()
+const chatStore = useChatStore()
+
+// Same wording and cleanup as 中斷遊戲 on the scene page.
+const LEAVE_CONFIRM = '確定要中斷本次遊戲嗎？目前進度將不會保留。'
+
+function abandonGame(): void {
+  chatStore.reset()
+  scenarioStore.reset()
+  gameStore.reset()
+}
 
 const content = ref<string>('')
 const submitting = ref<boolean>(false)
@@ -59,6 +71,7 @@ onMounted(() => {
 
     <main class="record-shell">
       <section class="record-glass">
+        <BackButton to="/" label="中斷並回首頁" :confirm-message="LEAVE_CONFIRM" @leave="abandonGame" />
         <header class="record-header">
           <p class="record-eyebrow">Clinical Record Summary</p>
           <h1 class="record-title">病患記錄</h1>

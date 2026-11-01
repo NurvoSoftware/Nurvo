@@ -10,6 +10,7 @@ import RadarChart from '@/components/dashboard/RadarChart.vue'
 import ScoreChart from '@/components/dashboard/ScoreChart.vue'
 import FeedbackCard from '@/components/dashboard/FeedbackCard.vue'
 import DialogueTimeline from '@/components/dashboard/DialogueTimeline.vue'
+import SbarCard from '@/components/dashboard/SbarCard.vue'
 import type { ScoreResult } from '@/types/game'
 
 const router = useRouter()
@@ -156,6 +157,10 @@ onMounted(async () => {
         <section class="feedback-section">
           <FeedbackCard type="strengths" :items="result.strengths" />
           <FeedbackCard type="improvements" :items="result.improvements" />
+        </section>
+
+        <section v-if="result.sbar_analysis" class="sbar-section">
+          <SbarCard :analysis="result.sbar_analysis" />
         </section>
 
         <!-- Key Moments Section -->
@@ -374,6 +379,10 @@ onMounted(async () => {
 .feedback-section > * {
   flex: 1;
   min-width: 0;
+}
+
+.sbar-section {
+  margin-bottom: 22px;
 }
 
 /* Moments Section */

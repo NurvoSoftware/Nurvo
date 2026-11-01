@@ -3,7 +3,6 @@ export interface User {
   email: string
   name: string | null
   picture_url: string | null
-  credits: number
 }
 
 export interface PatientProfile {
@@ -111,6 +110,20 @@ export interface KeyMoment {
   description: string
 }
 
+export type SbarRating = 'complete' | 'partial' | 'missing'
+
+export interface SbarItem {
+  rating: SbarRating
+  feedback: string
+}
+
+export interface SbarAnalysis {
+  situation: SbarItem
+  background: SbarItem
+  assessment: SbarItem
+  recommendation: SbarItem
+}
+
 export interface ScoreResult {
   session_id: string
   overall_score: number
@@ -119,6 +132,61 @@ export interface ScoreResult {
   strengths: string[]
   improvements: string[]
   key_moments: KeyMoment[]
+  sbar_analysis?: SbarAnalysis | null
+}
+
+export const DIMENSION_LABELS: Record<keyof DimensionScores, string> = {
+  empathy: '同理心',
+  guided_questioning: '引導式提問',
+  family_calming: '家屬安撫',
+  info_gathering: '資訊採集',
+  response_fluency: '回應流暢度',
+}
+
+export const SBAR_SECTIONS: { key: keyof SbarAnalysis; letter: string; label: string }[] = [
+  { key: 'situation', letter: 'S', label: '情境' },
+  { key: 'background', letter: 'B', label: '背景' },
+  { key: 'assessment', letter: 'A', label: '評估' },
+  { key: 'recommendation', letter: 'R', label: '建議' },
+]
+
+export const SBAR_RATING_LABEL: Record<SbarRating, string> = {
+  complete: '完整',
+  partial: '部分',
+  missing: '缺漏',
+}
+
+/** The player's most recent completed session (GET /api/score/latest). */
+export interface LatestRecord {
+  session_id: string
+  difficulty: ScenarioDifficulty
+  completed_at: string
+  overall_score: number
+  level_label: string
+  dimension_scores: DimensionScores
+  improvements: string[]
+  sbar_analysis: SbarAnalysis | null
+}
+
+/** One completed session in `GET /api/history` (newest first). */
+export interface HistoryItem {
+  session_id: string
+  difficulty: string
+  completed_at: string
+  patient_name: string
+  patient_diagnosis: string
+  overall_score: number
+  level_label: string
+}
+
+/** `GET /api/history/{session_id}` — a past report with its full scorecard. */
+export interface HistoryDetail {
+  session_id: string
+  difficulty: string
+  completed_at: string
+  patient_name: string
+  patient_diagnosis: string
+  score: ScoreResult
 }
 
 export interface GameSession {
@@ -145,7 +213,6 @@ export type GameStatus =
 export interface ScenarioGenerateResponse {
   session_id: string
   scenario: Scenario
-  credits_remaining: number
 }
 
 export interface WsNpcMessage {

@@ -104,7 +104,12 @@ migrations manually:
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password_hash character varying(255);
 ALTER TABLE public.game_sessions ALTER COLUMN user_id DROP NOT NULL;
 ALTER TABLE public.game_sessions ADD COLUMN IF NOT EXISTS chat_messages jsonb DEFAULT '[]'::jsonb NOT NULL;
+ALTER TABLE public.score_results ADD COLUMN IF NOT EXISTS sbar_analysis jsonb;  -- infra/db-init/04
 ```
+
+**Production:** run `infra/db-init/04-sbar-analysis.sql` once before deploying the SBAR release —
+`persist.py` writes `sbar_analysis`, and without the column every completed-session write fails
+(logged, scorecard still returned, but nothing is saved).
 
 ## Common tasks
 

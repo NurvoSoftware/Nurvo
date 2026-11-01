@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -9,8 +10,22 @@ defineProps<{
 
 const router = useRouter()
 const authStore = useAuthStore()
+const showMenu = ref(false)
+
+// The menu button uses @click.stop, so any click that reaches document is outside it.
+function closeMenu() {
+  showMenu.value = false
+}
+onMounted(() => document.addEventListener('click', closeMenu))
+onUnmounted(() => document.removeEventListener('click', closeMenu))
+
+function goHistory() {
+  closeMenu()
+  router.push('/history')
+}
 
 function handleLogout() {
+  closeMenu()
   authStore.logout()
   router.push('/')
 }
@@ -32,9 +47,16 @@ function handleLogout() {
           :alt="authStore.user.name ?? ''"
           referrerpolicy="no-referrer"
         />
-        <span class="user-name">{{ authStore.user?.name }}</span>
-        <span class="credits-badge">{{ authStore.user?.credits ?? 0 }} 點</span>
-        <button class="btn-logout" @click="handleLogout">登出</button>
+        <div class="user-menu" @click.stop>
+          <button class="user-menu-btn" :aria-expanded="showMenu" @click="showMenu = !showMenu">
+            <span class="user-name">{{ authStore.user?.name ?? authStore.user?.email }}</span>
+            <span class="chevron" :class="{ open: showMenu }">▾</span>
+          </button>
+          <div v-if="showMenu" class="dropdown">
+            <button class="dropdown-item" @click="goHistory">歷史遊玩報告</button>
+            <button class="dropdown-item dropdown-item--logout" @click="handleLogout">登出</button>
+          </div>
+        </div>
       </template>
       <template v-else>
         <button class="btn-login" @click="router.push('/login')">登入</button>
@@ -100,31 +122,66 @@ function handleLogout() {
   white-space: nowrap;
 }
 
-.credits-badge {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1d4ed8;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 999px;
-  padding: 4px 12px;
-  white-space: nowrap;
+.user-menu {
+  position: relative;
 }
 
-.btn-logout {
-  font-size: 13px;
-  font-weight: 600;
-  color: #64748b;
+.user-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: none;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 6px 14px;
+  padding: 6px 10px;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  transition: border-color 0.2s;
 }
-.btn-logout:hover {
+.user-menu-btn:hover {
   border-color: #94a3b8;
+}
+
+.chevron {
+  font-size: 12px;
+  color: #64748b;
+  transition: transform 0.15s;
+}
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
+
+.dropdown-item {
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
   color: #334155;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.dropdown-item:hover {
+  background: #f1f5f9;
+}
+.dropdown-item--logout {
+  color: #64748b;
+  border-top: 1px solid #f1f5f9;
 }
 
 .btn-login {

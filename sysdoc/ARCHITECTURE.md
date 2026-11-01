@@ -8,6 +8,35 @@
 > initial system record, not authored at decision time — dates are approximate to the commits
 > that introduced each choice. Refine when the original authors confirm details.
 
+## 2026-10-31 — Per-game credits switched off; kept on branch `feat/credits`
+
+**Context:** The credits mechanism (80 on sign-up, 30 per generated scenario, 402 when short) is
+not wanted for now and should be reviewable on its own.
+
+**Decision:** Removed the deduction, the 402, the credit badge/modals and `credits` /
+`credits_remaining` from API responses. The `users.credits` column is left in place (it has a
+default), so no migration is needed and re-enabling is a pure code change: branch `feat/credits`
+re-applies exactly this removal in reverse.
+
+**Alternative considered:** Dropping the column — rejected: irreversible on production data and
+unnecessary for turning the feature off.
+
+## 2026-10-31 — SBAR review folded into the existing scoring call; stored as one JSONB column
+
+**Context:** Students should see how their patient record holds up against SBAR, and revisit last
+session's weak spots before the next run.
+
+**Decision:** The existing GPT-4o scoring prompt also returns `sbar_analysis`; it is validated with
+Pydantic (`Literal` ratings) and a malformed block becomes `None` rather than failing the score. It
+does not affect the weighted score. Persisted as nullable `score_results.sbar_analysis JSONB`;
+`GET /api/score/latest` reads it back. The cookbook "seen" flag lives in `localStorage`.
+
+**Alternatives considered:**
+- Separate LLM call for SBAR — rejected: extra latency and cost on the critical score path.
+- Four `sbar_*` columns — rejected: the shape may still change; JSONB avoids further migrations.
+- `users.onboarded_at` for the cookbook prompt — rejected for now: a non-mandatory hint does not
+  justify a migration; cost is that it re-appears on a new browser.
+
 ## 2026-06-20 — Baseline HTTP security headers (per-layer) + self-hosted font
 
 **Context:** An HCL AppScan scan of the production deployment flagged 11 issues, mostly missing

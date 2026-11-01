@@ -9,7 +9,7 @@ Nurvo is a web-based training game for nurse-patient communication. A nurse play
 - WebSocket chat (`/api/chat/{session_id}`): the nurse picks one or more characters (or all of them) as targets with @mention chips; family members can interject, and NPCs speak up on their own when the nurse stays idle.
 - Voice input and output: ElevenLabs Scribe transcribes the nurse's speech; ElevenLabs TTS voices each NPC, choosing a voice by role and gender when those voice IDs are configured and falling back to a default voice otherwise.
 - GPT-4o scoring on five weighted dimensions (empathy 20%, guided questioning 25%, family calming 15%, information gathering 25%, response fluency 15%), shown on a results dashboard with a radar chart.
-- Google OAuth or email/password login (custom JWT on PostgreSQL), per-game credits, and best-effort storage of completed sessions.
+- Google OAuth or email/password login (custom JWT on PostgreSQL) and best-effort storage of completed sessions.
 - Baseline HTTP security headers (CSP, HSTS, COOP/COEP/CORP and others) set in both nginx and a FastAPI middleware, added in response to an HCL AppScan web-security scan.
 
 **Tech stack:** Vue 3, TypeScript, Vite, Pinia, PrimeVue · FastAPI (Python 3.11), asyncpg, PostgreSQL · OpenAI GPT-4o (scenarios, scoring), gpt-4.1-mini (NPC dialogue, configurable), DALL·E 3 · ElevenLabs TTS and Scribe · nginx, Docker Compose · Vitest, pytest.

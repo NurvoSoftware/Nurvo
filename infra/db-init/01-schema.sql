@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS game_sessions (
     time_limit_seconds INT         NOT NULL DEFAULT 480,
     started_at         TIMESTAMPTZ,
     completed_at       TIMESTAMPTZ,
-    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    chat_messages      JSONB       NOT NULL DEFAULT '[]'
 );
 CREATE INDEX IF NOT EXISTS idx_game_sessions_user    ON game_sessions (user_id);
 CREATE INDEX IF NOT EXISTS idx_game_sessions_status  ON game_sessions (status);
@@ -68,7 +69,7 @@ CREATE TABLE IF NOT EXISTS family_members (
     member_index          INT  NOT NULL CHECK (member_index IN (0, 1, 2)),
     name                  VARCHAR(100) NOT NULL,
     gender                VARCHAR(10)  NOT NULL,
-    relationship          VARCHAR(100) NOT NULL,
+    relationship_role     VARCHAR(100) NOT NULL,
     personality           TEXT NOT NULL,
     emotional_state       TEXT NOT NULL,
     interjection_triggers JSONB NOT NULL DEFAULT '[]',
@@ -112,7 +113,8 @@ CREATE TABLE IF NOT EXISTS score_results (
     strengths                JSONB NOT NULL DEFAULT '[]',
     improvements             JSONB NOT NULL DEFAULT '[]',
     key_moments              JSONB NOT NULL DEFAULT '[]',
-    evaluated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    evaluated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    sbar_analysis            JSONB
 );
 CREATE INDEX IF NOT EXISTS idx_score_results_session ON score_results (session_id);
 CREATE INDEX IF NOT EXISTS idx_score_results_score   ON score_results (overall_score);

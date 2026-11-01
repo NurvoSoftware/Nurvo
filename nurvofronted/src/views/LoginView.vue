@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import BackButton from '@/components/shared/BackButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -104,7 +105,7 @@ async function handleEmailLogin() {
         </form>
 
         <p class="back-link">
-          <router-link to="/">← 返回首頁</router-link>
+          <BackButton to="/" label="返回首頁" />
         </p>
       </div>
     </div>
@@ -321,12 +322,6 @@ async function handleEmailLogin() {
   margin: 20px 0 0;
   font-size: 13px;
 }
-.back-link a {
-  color: #3b82f6;
-  text-decoration: none;
-  font-weight: 500;
-}
-.back-link a:hover { text-decoration: underline; }
 
 /* ── Mobile: single column ───────────────────────────── */
 @media (max-width: 768px) {
