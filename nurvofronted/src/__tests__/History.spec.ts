@@ -132,6 +132,18 @@ describe('HistoryDetailView', () => {
 
     expect(wrapper.text()).toContain('無法載入報告')
   })
+
+  it('has a start-training button next to the back link', async () => {
+    apiMocks.fetchHistoryDetail.mockResolvedValue(detail)
+
+    const wrapper = mount(HistoryDetailView, { global: { stubs: { NavBar: true } } })
+    await flushPromises()
+
+    const btn = wrapper.find('.detail-topbar .btn-train')
+    expect(btn.text()).toBe('進入訓練')
+    await btn.trigger('click')
+    expect(routerMock.push).toHaveBeenCalledWith({ name: 'level-select' })
+  })
 })
 
 describe('NavBar user menu', () => {
