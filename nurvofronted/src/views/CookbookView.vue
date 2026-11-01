@@ -105,9 +105,15 @@ const steps: Array<{
 const current = ref(0)
 const step = computed(() => steps[current.value]!)
 const isLast = computed(() => current.value === steps.length - 1)
+// Positioned by its centre, so the CSS minimum tap size grows evenly around the real button.
 const targetStyle = computed(() => {
   const t = step.value.target
-  return { left: `${t.left}%`, top: `${t.top}%`, width: `${t.width}%`, height: `${t.height}%` }
+  return {
+    left: `${t.left + t.width / 2}%`,
+    top: `${t.top + t.height / 2}%`,
+    width: `${t.width}%`,
+    height: `${t.height}%`,
+  }
 })
 
 /** The highlighted spot in the mini screen: advance, or start real practice on the last step. */
@@ -134,7 +140,11 @@ function scrollToTarget(): void {
   const el = viewport.value
   if (!el) return
   const targetY = (step.value.target.top / 100) * el.scrollHeight
-  el.scrollTo({ top: Math.max(0, targetY - el.clientHeight * 0.6), behavior: 'smooth' })
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  el.scrollTo({
+    top: Math.max(0, targetY - el.clientHeight * 0.6),
+    behavior: reduceMotion ? 'auto' : 'smooth',
+  })
 }
 </script>
 
@@ -163,9 +173,19 @@ function scrollToTarget(): void {
         <p class="step-counter">{{ current + 1 }} / {{ steps.length }}</p>
 
         <div class="step-layout">
+          <!-- Explanation comes first in the DOM so screen readers hear it before the button. -->
+          <div class="step-text" aria-live="polite">
+            <div class="step-icon">{{ step.icon }}</div>
+            <h2 class="step-title">{{ step.title }}</h2>
+            <ul class="step-points">
+              <li v-for="point in step.points" :key="point">{{ point }}</li>
+            </ul>
+            <p class="step-tip">💡 {{ step.tip }}</p>
+          </div>
+
           <div class="mock-wrap">
             <!-- A capture of the real page. Only .mock-target (over the real button) reacts to clicks. -->
-            <div class="mock-screen" :aria-label="step.title + ' 模擬畫面'">
+            <div class="mock-screen" role="group" :aria-label="step.title + ' 模擬畫面'">
               <div class="mock-bar"><span /><span /><span /></div>
               <div ref="viewport" class="mock-viewport">
                 <div class="mock-page">
@@ -186,15 +206,6 @@ function scrollToTarget(): void {
               </div>
             </div>
             <p class="mock-hint">👆 {{ step.hint }}</p>
-          </div>
-
-          <div class="step-text">
-            <div class="step-icon">{{ step.icon }}</div>
-            <h2 class="step-title">{{ step.title }}</h2>
-            <ul class="step-points">
-              <li v-for="point in step.points" :key="point">{{ point }}</li>
-            </ul>
-            <p class="step-tip">💡 {{ step.tip }}</p>
           </div>
         </div>
       </section>
@@ -327,6 +338,11 @@ function scrollToTarget(): void {
 }
 
 /* ── Capture of the real page ───────────────────── */
+/* Visually on the left (and on top when stacked), though it follows the text in the DOM. */
+.mock-wrap {
+  order: -1;
+}
+
 .mock-screen {
   border: 1px solid #cbd5e1;
   border-radius: 12px;
@@ -369,6 +385,9 @@ function scrollToTarget(): void {
 /* The one clickable spot, laid over the real button: pulsing ring so it's obvious. */
 .mock-target {
   position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 24px;
+  min-height: 24px;
   padding: 0;
   border: none;
   border-radius: 8px;

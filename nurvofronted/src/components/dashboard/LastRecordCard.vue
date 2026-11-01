@@ -39,6 +39,7 @@ const sbarGaps = computed(() => {
   <router-link
     class="last-record"
     :to="{ name: 'history-detail', params: { sessionId: record.session_id } }"
+    :aria-label="`查看上次練習完整報告（${record.overall_score} 分，最需要加強：${weakest.label}）`"
   >
     <header class="last-record-head">
       <div>

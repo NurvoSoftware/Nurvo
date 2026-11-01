@@ -40,12 +40,15 @@ describe('CookbookView', () => {
     expect(wrapper.find('.step-title').text()).toContain('成果報告')
   })
 
-  it('shows a capture of the real page on the left and the explanation on the right', async () => {
+  it('shows a capture of the real page, with the explanation read out before the target', async () => {
     const wrapper = mountView()
     const layout = wrapper.find('.step-layout').element.children
 
-    expect(layout[0]!.classList.contains('mock-wrap')).toBe(true)
-    expect(layout[1]!.classList.contains('step-text')).toBe(true)
+    // DOM order is for screen readers (explanation first, then the button);
+    // CSS `order` puts the capture on the left visually.
+    expect(layout[0]!.classList.contains('step-text')).toBe(true)
+    expect(layout[1]!.classList.contains('mock-wrap')).toBe(true)
+    expect(wrapper.find('.step-text').attributes('aria-live')).toBe('polite')
 
     const first = wrapper.find('.mock-screen img').attributes('src')
     await wrapper.find('.mock-target').trigger('click')
