@@ -40,6 +40,18 @@ describe('CookbookView', () => {
     expect(wrapper.find('.step-title').text()).toContain('成果報告')
   })
 
+  it('shows a capture of the real page on the left and the explanation on the right', async () => {
+    const wrapper = mountView()
+    const layout = wrapper.find('.step-layout').element.children
+
+    expect(layout[0]!.classList.contains('mock-wrap')).toBe(true)
+    expect(layout[1]!.classList.contains('step-text')).toBe(true)
+
+    const first = wrapper.find('.mock-screen img').attributes('src')
+    await wrapper.find('.mock-target').trigger('click')
+    expect(wrapper.find('.mock-screen img').attributes('src')).not.toBe(first)
+  })
+
   it('every step has exactly one clickable target', async () => {
     const wrapper = mountView()
     const total = wrapper.findAll('.step-dot').length

@@ -2,12 +2,34 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/shared/NavBar.vue'
+import levelShot from '@/assets/cookbook/level.jpg'
+import briefingShot from '@/assets/cookbook/briefing.jpg'
+import chatShot from '@/assets/cookbook/chat.jpg'
+import recordShot from '@/assets/cookbook/record.jpg'
+import reportShot from '@/assets/cookbook/report.jpg'
 
 const router = useRouter()
 
 type StepKey = 'level' | 'briefing' | 'chat' | 'record' | 'report'
 
-const steps: Array<{ key: StepKey; icon: string; title: string; points: string[]; tip: string; hint: string }> = [
+/** Where the real button sits in the capture, as % of the image (measured when it was taken). */
+interface Target {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+const steps: Array<{
+  key: StepKey
+  icon: string
+  title: string
+  points: string[]
+  tip: string
+  hint: string
+  shot: string
+  target: Target
+}> = [
   {
     key: 'level',
     icon: '🎯',
@@ -15,10 +37,12 @@ const steps: Array<{ key: StepKey; icon: string; title: string; points: string[]
     points: [
       '入門、標準、進階三種難度，時限分別是 10、8、6 分鐘',
       '每次生成教案會扣 30 點，頁面右上方可以看到剩餘點數',
-      '練習過之後，這一頁會顯示「上次練習回顧」，提醒你上次的弱項',
+      '練習過之後，這一頁會顯示黃色的「上次練習回顧」，點它可以看上次的完整報告',
     ],
     tip: '第一次練習建議從「入門」開始。',
-    hint: '點「生成教案」',
+    hint: '點「生成教案」試試看',
+    shot: levelShot,
+    target: { left: 81.3, top: 91.83, width: 6.98, height: 3.74 },
   },
   {
     key: 'briefing',
@@ -30,7 +54,9 @@ const steps: Array<{ key: StepKey; icon: string; title: string; points: string[]
       '準備好後按「進入場景」，計時就會開始',
     ],
     tip: '先想好要問哪些疼痛相關問題，進場後會更從容。',
-    hint: '點「進入場景」',
+    hint: '點「進入場景」試試看',
+    shot: briefingShot,
+    target: { left: 70.63, top: 87.42, width: 10.47, height: 3.93 },
   },
   {
     key: 'chat',
@@ -42,7 +68,9 @@ const steps: Array<{ key: StepKey; icon: string; title: string; points: string[]
       '家屬會主動插話，適時回應、安撫他們的情緒也會計分',
     ],
     tip: '用開放式問題開場，再逐步問清楚疼痛的部位、程度與持續時間。',
-    hint: '點「送出」',
+    hint: '點右下角的「送出」試試看',
+    shot: chatShot,
+    target: { left: 92.57, top: 87.13, width: 2.81, height: 4.5 },
   },
   {
     key: 'record',
@@ -54,7 +82,9 @@ const steps: Array<{ key: StepKey; icon: string; title: string; points: string[]
       '摘要會依 SBAR（情境、背景、評估、建議）四個面向分析',
     ],
     tip: '照 S → B → A → R 的順序寫，最不容易漏掉重點。',
-    hint: '點「提交記錄」',
+    hint: '點「提交記錄」試試看',
+    shot: recordShot,
+    target: { left: 42.58, top: 76.22, width: 14.84, height: 6 },
   },
   {
     key: 'report',
@@ -66,13 +96,19 @@ const steps: Array<{ key: StepKey; icon: string; title: string; points: string[]
       '下次選難度時，系統會提醒你上次最需要加強的地方',
     ],
     tip: '每次練習專注改善一個弱項，進步最快。',
-    hint: '點「開始第一次練習」',
+    hint: '點「再玩一次」，開始你的第一次練習',
+    shot: reportShot,
+    target: { left: 39.91, top: 91.27, width: 10.72, height: 3.22 },
   },
 ]
 
 const current = ref(0)
 const step = computed(() => steps[current.value]!)
 const isLast = computed(() => current.value === steps.length - 1)
+const targetStyle = computed(() => {
+  const t = step.value.target
+  return { left: `${t.left}%`, top: `${t.top}%`, width: `${t.width}%`, height: `${t.height}%` }
+})
 
 /** The highlighted spot in the mini screen: advance, or start real practice on the last step. */
 function hitTarget(): void {
@@ -89,6 +125,16 @@ function prev(): void {
 
 function goToLevelSelect(): void {
   router.push({ name: 'level-select' })
+}
+
+const viewport = ref<HTMLElement | null>(null)
+
+/** Tall pages scroll inside the frame like the real page; bring the button into view once loaded. */
+function scrollToTarget(): void {
+  const el = viewport.value
+  if (!el) return
+  const targetY = (step.value.target.top / 100) * el.scrollHeight
+  el.scrollTo({ top: Math.max(0, targetY - el.clientHeight * 0.6), behavior: 'smooth' })
 }
 </script>
 
@@ -117,6 +163,31 @@ function goToLevelSelect(): void {
         <p class="step-counter">{{ current + 1 }} / {{ steps.length }}</p>
 
         <div class="step-layout">
+          <div class="mock-wrap">
+            <!-- A capture of the real page. Only .mock-target (over the real button) reacts to clicks. -->
+            <div class="mock-screen" :aria-label="step.title + ' 模擬畫面'">
+              <div class="mock-bar"><span /><span /><span /></div>
+              <div ref="viewport" class="mock-viewport">
+                <div class="mock-page">
+                  <img
+                    :key="step.key"
+                    :src="step.shot"
+                    :alt="step.title + ' 畫面'"
+                    draggable="false"
+                    @load="scrollToTarget"
+                  />
+                  <button
+                    class="mock-target"
+                    :aria-label="step.hint"
+                    :style="targetStyle"
+                    @click="hitTarget"
+                  />
+                </div>
+              </div>
+            </div>
+            <p class="mock-hint">👆 {{ step.hint }}</p>
+          </div>
+
           <div class="step-text">
             <div class="step-icon">{{ step.icon }}</div>
             <h2 class="step-title">{{ step.title }}</h2>
@@ -124,85 +195,6 @@ function goToLevelSelect(): void {
               <li v-for="point in step.points" :key="point">{{ point }}</li>
             </ul>
             <p class="step-tip">💡 {{ step.tip }}</p>
-          </div>
-
-          <div class="mock-wrap">
-            <!-- Mini replica of the real screen. Only .mock-target reacts to clicks. -->
-            <div class="mock-screen" :aria-label="`${step.title} 模擬畫面`">
-              <div class="mock-bar"><span /><span /><span /></div>
-
-              <div v-if="step.key === 'level'" class="mock-body">
-                <p class="mock-heading">選擇關卡難度</p>
-                <div class="mock-cards">
-                  <div class="mock-card">入門</div>
-                  <div class="mock-card mock-card--active">標準</div>
-                  <div class="mock-card">進階</div>
-                </div>
-                <div class="mock-actions">
-                  <span class="mock-btn">返回首頁</span>
-                  <button class="mock-target mock-btn mock-btn--primary" @click="hitTarget">生成教案</button>
-                </div>
-              </div>
-
-              <div v-else-if="step.key === 'briefing'" class="mock-body">
-                <p class="mock-heading">任務簡報</p>
-                <div class="mock-panel">
-                  <p><b>病患：</b>李大華，70 歲，腰椎間盤突出</p>
-                  <p><b>家屬：</b>陳太太（焦慮）、李小明、李小美</p>
-                </div>
-                <div class="mock-actions">
-                  <span class="mock-muted">⏱ 限時 8 分鐘</span>
-                  <button class="mock-target mock-btn mock-btn--primary" @click="hitTarget">進入場景 →</button>
-                </div>
-              </div>
-
-              <div v-else-if="step.key === 'chat'" class="mock-body">
-                <div class="mock-chips">
-                  <span class="mock-chip mock-chip--on">病患</span>
-                  <span class="mock-chip">陳太太</span>
-                  <span class="mock-chip">李小明</span>
-                </div>
-                <div class="mock-bubble">病患：我這邊好痛……</div>
-                <div class="mock-bubble mock-bubble--family">陳太太：護理師他到底怎麼了？</div>
-                <div class="mock-input">
-                  <span class="mock-input-text">請問哪裡最不舒服呢？</span>
-                  <span class="mock-mic">🎤</span>
-                  <button class="mock-target mock-send" aria-label="送出" @click="hitTarget">➤</button>
-                </div>
-              </div>
-
-              <div v-else-if="step.key === 'record'" class="mock-body">
-                <p class="mock-heading">病患記錄</p>
-                <div class="mock-textarea">
-                  S：腰部刺痛 7 分，搬重物後開始<br>
-                  B：高血壓病史<br>
-                  A：疼痛影響活動，需處置<br>
-                  R：通知醫師評估止痛藥
-                </div>
-                <div class="mock-actions">
-                  <span />
-                  <button class="mock-target mock-btn mock-btn--primary" @click="hitTarget">提交記錄 →</button>
-                </div>
-              </div>
-
-              <div v-else class="mock-body">
-                <p class="mock-heading">成果報告</p>
-                <div class="mock-report">
-                  <p class="mock-score">72<small>/100</small></p>
-                  <div class="mock-bars">
-                    <span style="width: 80%" /><span style="width: 55%" /><span style="width: 70%" />
-                  </div>
-                </div>
-                <div class="mock-sbar">
-                  <span class="ok">S</span><span class="mid">B</span><span class="bad">A</span><span class="ok">R</span>
-                </div>
-                <div class="mock-actions">
-                  <span />
-                  <button class="mock-target mock-btn mock-btn--primary" @click="hitTarget">開始第一次練習 →</button>
-                </div>
-              </div>
-            </div>
-            <p class="mock-hint">👆 {{ step.hint }}試試看</p>
           </div>
         </div>
       </section>
@@ -222,7 +214,7 @@ function goToLevelSelect(): void {
 }
 
 .cookbook-container {
-  max-width: 960px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 40px 16px 56px;
 }
@@ -297,7 +289,7 @@ function goToLevelSelect(): void {
 
 .step-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: 28px;
   align-items: center;
 }
@@ -334,15 +326,13 @@ function goToLevelSelect(): void {
   font-weight: 600;
 }
 
-/* ── Mini mock screen ───────────────────────────── */
+/* ── Capture of the real page ───────────────────── */
 .mock-screen {
   border: 1px solid #cbd5e1;
   border-radius: 12px;
   background: #f8fbff;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-  font-size: 12px;
-  color: #334155;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
   user-select: none;
 }
 
@@ -360,197 +350,38 @@ function goToLevelSelect(): void {
   background: #94a3b8;
 }
 
-.mock-body {
-  padding: 14px;
-  min-height: 190px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* Same shape as the 1280×800 window the captures were taken in. */
+.mock-viewport {
+  aspect-ratio: 16 / 10;
+  overflow-y: auto;
 }
 
-.mock-heading {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 800;
-  color: #0f172a;
-  text-align: center;
-}
-
-.mock-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-
-.mock-card {
-  padding: 16px 0;
-  border: 1px solid #dbeafe;
-  border-radius: 8px;
-  background: #ffffff;
-  text-align: center;
-  font-weight: 700;
-}
-
-.mock-card--active {
-  border-color: #60a5fa;
-  background: #eff6ff;
-}
-
-.mock-panel,
-.mock-textarea {
-  padding: 10px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #ffffff;
-  line-height: 1.7;
-}
-
-.mock-panel p {
-  margin: 0;
-}
-
-.mock-actions {
-  margin-top: auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.mock-btn {
-  border: none;
-  border-radius: 7px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  background: #e2e8f0;
-  color: #334155;
-}
-
-.mock-btn--primary {
-  background: var(--nurvo-gradient-primary);
-  color: #ffffff;
-}
-
-.mock-muted {
-  color: #64748b;
-}
-
-.mock-chips {
-  display: flex;
-  gap: 6px;
-}
-
-.mock-chip {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-}
-
-.mock-chip--on {
-  border-color: #60a5fa;
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.mock-bubble {
-  align-self: flex-start;
-  padding: 6px 10px;
-  border-radius: 10px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-}
-
-.mock-bubble--family {
-  background: #fef9c3;
-  border-color: #fde68a;
-}
-
-.mock-input {
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 6px 6px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  background: #ffffff;
-}
-
-.mock-input-text {
-  flex: 1;
-}
-
-.mock-send {
-  border: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--nurvo-primary);
-  color: #ffffff;
-}
-
-.mock-report {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-}
-
-.mock-score {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 800;
-  color: #2563eb;
-}
-
-.mock-score small {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.mock-bars {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.mock-bars span {
-  display: block;
-  height: 6px;
-  border-radius: 3px;
-  background: #3b82f6;
-}
-
-.mock-sbar {
-  display: flex;
-  gap: 6px;
-}
-
-.mock-sbar span {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  color: #ffffff;
-}
-
-.mock-sbar .ok { background: #22c55e; }
-.mock-sbar .mid { background: #eab308; }
-.mock-sbar .bad { background: #ef4444; }
-
-/* The one clickable spot: pulsing ring so it's obvious where to click. */
-.mock-target {
-  cursor: pointer;
+.mock-page {
   position: relative;
+}
+
+.mock-page img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The one clickable spot, laid over the real button: pulsing ring so it's obvious. */
+.mock-target {
+  position: absolute;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  outline: 3px solid #f97316;
+  outline-offset: 3px;
+  cursor: pointer;
   animation: mock-pulse 1.4s ease-out infinite;
 }
 
 @keyframes mock-pulse {
   0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); }
-  100% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+  100% { box-shadow: 0 0 0 14px rgba(249, 115, 22, 0); }
 }
 
 .mock-hint {
@@ -592,7 +423,7 @@ function goToLevelSelect(): void {
   cursor: not-allowed;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 860px) {
   .step-layout {
     grid-template-columns: 1fr;
   }

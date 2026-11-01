@@ -36,7 +36,10 @@ const sbarGaps = computed(() => {
 </script>
 
 <template>
-  <section class="last-record">
+  <router-link
+    class="last-record"
+    :to="{ name: 'history-detail', params: { sessionId: record.session_id } }"
+  >
     <header class="last-record-head">
       <div>
         <p class="last-record-eyebrow">上次練習回顧</p>
@@ -67,17 +70,37 @@ const sbarGaps = computed(() => {
         </div>
       </div>
     </div>
-  </section>
+
+    <p class="last-record-more">查看完整報告 →</p>
+  </router-link>
 </template>
 
 <style scoped>
 .last-record {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
   border: 1px solid #fde68a;
   border-left: 4px solid #f59e0b;
   border-radius: 16px;
   background: #fffbeb;
   padding: 18px 20px;
   margin-bottom: 20px;
+}
+
+.last-record:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.18);
+}
+
+.last-record-more {
+  margin: 12px 0 0;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b45309;
 }
 
 .last-record-head {
