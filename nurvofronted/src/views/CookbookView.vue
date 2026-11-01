@@ -43,7 +43,7 @@ const steps: Array<{
     tip: '第一次練習建議從「入門」開始。',
     hint: '點「生成教案」試試看',
     shot: levelShot,
-    target: { left: 81.3, top: 91.83, width: 6.98, height: 3.74 },
+    target: { left: 81.3, top: 92.14, width: 6.98, height: 3.61 },
   },
   {
     key: 'briefing',
@@ -57,7 +57,7 @@ const steps: Array<{
     tip: '先想好要問哪些疼痛相關問題，進場後會更從容。',
     hint: '點「進入場景」試試看',
     shot: briefingShot,
-    target: { left: 70.63, top: 87.42, width: 10.47, height: 3.93 },
+    target: { left: 70.63, top: 88.06, width: 10.47, height: 3.73 },
   },
   {
     key: 'chat',
@@ -85,7 +85,7 @@ const steps: Array<{
     tip: '照 S → B → A → R 的順序寫，最不容易漏掉重點。',
     hint: '點「提交記錄」試試看',
     shot: recordShot,
-    target: { left: 42.58, top: 76.22, width: 14.84, height: 6 },
+    target: { left: 42.58, top: 80.97, width: 14.84, height: 6 },
   },
   {
     key: 'report',
@@ -99,7 +99,7 @@ const steps: Array<{
     tip: '每次練習專注改善一個弱項，進步最快。',
     hint: '點「再玩一次」，開始你的第一次練習',
     shot: reportShot,
-    target: { left: 39.91, top: 91.27, width: 10.72, height: 3.22 },
+    target: { left: 39.91, top: 91.09, width: 10.72, height: 3.26 },
   },
 ]
 
