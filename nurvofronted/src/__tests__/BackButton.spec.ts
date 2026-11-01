@@ -94,6 +94,13 @@ describe('BackButton', () => {
     expect(routerMock.push).toHaveBeenCalledWith('/')
   })
 
+  it('can point forward, with the arrow after the label', () => {
+    const wrapper = mount(BackButton, { props: { to: '/', label: '進入訓練', arrow: 'forward' } })
+
+    const spans = wrapper.findAll('span').map((s) => s.text())
+    expect(spans).toEqual(['進入訓練', '→'])
+  })
+
   it('stays put (and emits nothing) when the confirmation is declined', async () => {
     confirmSpy.mockReturnValue(false)
     const wrapper = mount(BackButton, { props: { to: '/', label: '離開', confirmMessage: '確定？' } })

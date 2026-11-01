@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import HistoryView from '@/views/HistoryView.vue'
 import HistoryDetailView from '@/views/HistoryDetailView.vue'
 import NavBar from '@/components/shared/NavBar.vue'
+import BackButton from '@/components/shared/BackButton.vue'
 import { useAuthStore } from '@/stores/authStore'
 import type { HistoryDetail, HistoryItem } from '@/types/game'
 
@@ -139,9 +140,11 @@ describe('HistoryDetailView', () => {
     const wrapper = mount(HistoryDetailView, { global: { stubs: { NavBar: true } } })
     await flushPromises()
 
-    const btn = wrapper.find('.detail-topbar .btn-train')
-    expect(btn.text()).toBe('進入訓練')
-    await btn.trigger('click')
+    // Same link style as the back link on its left, pointing forward.
+    const [back, train] = wrapper.find('.detail-topbar').findAllComponents(BackButton)
+    expect(back!.props('label')).toBe('返回歷史紀錄')
+    expect(train!.props()).toMatchObject({ label: '進入訓練', arrow: 'forward' })
+    await train!.trigger('click')
     expect(routerMock.push).toHaveBeenCalledWith({ name: 'level-select' })
   })
 })

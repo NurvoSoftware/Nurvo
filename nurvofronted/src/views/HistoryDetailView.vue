@@ -86,9 +86,7 @@ function formatDate(iso: string) {
       <div class="detail-container">
         <div class="detail-topbar">
           <BackButton to="/history" label="返回歷史紀錄" />
-          <button class="btn btn-primary btn-train" @click="router.push({ name: 'level-select' })">
-            進入訓練
-          </button>
+          <BackButton :to="{ name: 'level-select' }" label="進入訓練" arrow="forward" />
         </div>
 
         <div v-if="loading" class="state-box">
@@ -236,14 +234,9 @@ function formatDate(iso: string) {
   margin-bottom: 8px;
 }
 
-/* The back link carries its own bottom margin for stacked layouts; not needed in this row. */
+/* The links carry their own bottom margin for stacked layouts; not needed in this row. */
 .detail-topbar :deep(.back-button) {
   margin: 0;
-}
-
-.btn-train {
-  padding: 10px 24px;
-  font-size: 15px;
 }
 
 .heading-meta {

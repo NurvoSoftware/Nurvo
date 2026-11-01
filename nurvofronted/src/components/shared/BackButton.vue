@@ -6,6 +6,8 @@ const props = defineProps<{
   label: string
   /** Ask first when leaving throws work away (e.g. an in-progress game). */
   confirmMessage?: string
+  /** 'forward' puts a → after the label, for "go on" links styled like the back link. */
+  arrow?: 'back' | 'forward'
 }>()
 
 const emit = defineEmits<{
@@ -23,9 +25,15 @@ function goBack(): void {
 </script>
 
 <template>
-  <button class="back-button" type="button" @click="goBack">
-    <span class="back-button__arrow" aria-hidden="true">←</span>
+  <button
+    class="back-button"
+    :class="{ 'back-button--forward': arrow === 'forward' }"
+    type="button"
+    @click="goBack"
+  >
+    <span v-if="arrow !== 'forward'" class="back-button__arrow" aria-hidden="true">←</span>
     <span class="back-button__label">{{ label }}</span>
+    <span v-if="arrow === 'forward'" class="back-button__arrow" aria-hidden="true">→</span>
   </button>
 </template>
 
@@ -57,6 +65,10 @@ function goBack(): void {
 
 .back-button:hover .back-button__arrow {
   transform: translateX(-2px);
+}
+
+.back-button--forward:hover .back-button__arrow {
+  transform: translateX(2px);
 }
 
 .back-button__arrow {
